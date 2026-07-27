@@ -49,7 +49,17 @@ public class ReconciliationEngine {
         //     return internal.parallelStream()
         //         .map(in -> matchOne(in, externalByRef.get(in.tradeRef().value()), rule))
         //         .toList();
-        throw new UnsupportedOperationException("TICKET-ADV033");
+        if (internal == null || internal.isEmpty()) {
+            return List.of();
+        }
+
+        Map<String, TradeType> externalByRef = (external == null ? List.<TradeType>of() : external)
+                .stream()
+                .collect(Collectors.toMap(t -> t.tradeRef().value(), Function.identity(), (a, b) -> a));
+
+        return internal.parallelStream()
+                .map(in -> matchOne(in, externalByRef.get(in.tradeRef().value()), rule))
+                .toList();
     }
 
     /**
@@ -72,7 +82,21 @@ public class ReconciliationEngine {
         // TODO(TICKET-ADV033): if external is null return ReconResult.breakResult(ref, "MISSING_EXTERNAL", ...).
         //   Otherwise pull priceQty() for both sides, compare via rule.matches(...),
         //   return ReconResult.matched(ref) or breakResult(ref, "VALUE_MISMATCH", details).
-        throw new UnsupportedOperationException("TICKET-ADV033");
+        String ref = internal.tradeRef().value();
+        if (external == null) {
+            return ReconResult.breakResult(ref, "MISSING_EXTERNAL", "No external trade found for " + ref);
+        }
+
+        BigDecimal[] internalPriceQty = priceQty(internal);
+        BigDecimal[] externalPriceQty = priceQty(external);
+        if (rule.matches(internalPriceQty[0], internalPriceQty[1],
+                externalPriceQty[0], externalPriceQty[1])) {
+            return ReconResult.matched(ref);
+        }
+        return ReconResult.breakResult(ref, "VALUE_MISMATCH",
+                "internal=%s/%s external=%s/%s".formatted(
+                        internalPriceQty[0], internalPriceQty[1],
+                        externalPriceQty[0], externalPriceQty[1]));
     }
 
     /** TICKET-ADV018 — exhaustive switch over the sealed hierarchy. */
@@ -81,6 +105,15 @@ public class ReconciliationEngine {
         //   (EquityTrade, FXTrade, BondTrade, DerivativeTrade) and return a
         //   BigDecimal[]{price, qty}. The compiler enforces exhaustiveness —
         //   omit a case and the build fails.
-        throw new UnsupportedOperationException("TICKET-ADV018");
+        return switch (t) {
+            case com.dbtraining.reconx.model.EquityTrade equity ->
+                    new BigDecimal[]{equity.price(), equity.quantity()};
+            case com.dbtraining.reconx.model.FXTrade fx ->
+                    new BigDecimal[]{fx.fxRate(), fx.notionalCcy1()};
+            case com.dbtraining.reconx.model.BondTrade bond ->
+                    new BigDecimal[]{bond.couponRate(), bond.faceValue()};
+            case com.dbtraining.reconx.model.DerivativeTrade derivative ->
+                    new BigDecimal[]{derivative.strike(), derivative.quantity()};
+        };
     }
 }
