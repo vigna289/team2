@@ -3,12 +3,12 @@
  ============================================================================
  TICKET-ADV006 — Core 8-entity ER model
  WHAT:    Counterparties, instruments, trades, settlements, recon_breaks,
-          recon_jobs, audit_log, users. trades is partitioned in 004; here it
-          is the non-partitioned base (H2 fallback) — see preconditions.
- HOW:     Standard <createTable> with constraints inline. Region/asset class/
-          status guarded by CHECK constraints.
+          recon_jobs, audit_log, users. trades is non-partitioned base here
+          (H2 fallback); 004-partitioning converts to partitioned on Postgres.
+ HOW:     Standard <createTable> with inline constraints. Preconditions guard
+          each table so re-runs skip if table already exists.
  WHY:     Strong-typed schema = the database catches bad data before it
-          reaches the recon engine.
+          reaches the recon engine. Partitioning (via 004) optimizes EOD queries.
  OBSERVE: After boot: \dt on Postgres lists 8 tables (+ databasechangelog).
  ============================================================================
 -->
@@ -19,7 +19,13 @@
                             http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-4.27.xsd">
 
     <!-- ADV006 — counterparties -->
-    <changeSet id="002-create-counterparties" author="trainer">
+    <changeSet id="002-create-counterparties" author="trainer" labels="core-schema">
+        <description>Create counterparties table with LEI code unique constraint</description>
+        <preConditions onFail="MARK_RAN">
+            <not>
+                <tableExists tableName="counterparties"/>
+            </not>
+        </preConditions>
         <createTable tableName="counterparties">
             <column name="id" type="BIGINT" autoIncrement="true">
                 <constraints primaryKey="true"/>
@@ -35,7 +41,13 @@
     </changeSet>
 
     <!-- ADV006 — instruments -->
-    <changeSet id="002-create-instruments" author="trainer">
+    <changeSet id="002-create-instruments" author="trainer" labels="core-schema">
+        <description>Create instruments table with symbol and ISIN uniqueness</description>
+        <preConditions onFail="MARK_RAN">
+            <not>
+                <tableExists tableName="instruments"/>
+            </not>
+        </preConditions>
         <createTable tableName="instruments">
             <column name="id" type="BIGINT" autoIncrement="true">
                 <constraints primaryKey="true"/>
@@ -52,7 +64,13 @@
     </changeSet>
 
     <!-- ADV006 — trades (non-partitioned base; 004 attaches partitions on Postgres) -->
-    <changeSet id="002-create-trades" author="trainer">
+    <changeSet id="002-create-trades" author="trainer" labels="core-schema">
+        <description>Create trades table with FK to instruments and counterparties</description>
+        <preConditions onFail="MARK_RAN">
+            <not>
+                <tableExists tableName="trades"/>
+            </not>
+        </preConditions>
         <createTable tableName="trades">
             <column name="id" type="BIGINT" autoIncrement="true">
                 <constraints primaryKey="true"/>
@@ -88,7 +106,13 @@
     </changeSet>
 
     <!-- ADV006 — settlements -->
-    <changeSet id="002-create-settlements" author="trainer">
+    <changeSet id="002-create-settlements" author="trainer" labels="core-schema">
+        <description>Create settlements table for trade settlement tracking</description>
+        <preConditions onFail="MARK_RAN">
+            <not>
+                <tableExists tableName="settlements"/>
+            </not>
+        </preConditions>
         <createTable tableName="settlements">
             <column name="id" type="BIGINT" autoIncrement="true">
                 <constraints primaryKey="true"/>

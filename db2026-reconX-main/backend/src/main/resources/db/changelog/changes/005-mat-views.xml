@@ -1,15 +1,16 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!--
  ============================================================================
- Materialised view mv_daily_recon_summary
- WHAT:    Daily aggregate of matched/break counts + total notional, used by
-          the dashboard's "today at a glance" cards.
- HOW:     REFRESH MATERIALIZED VIEW CONCURRENTLY (requires a unique index).
-          Scheduled refresh is a cron job (separate Day 6 task, not here).
+ TICKET-ADV009 — Materialized view: mv_daily_recon_summary
+ WHAT:    Daily aggregate of matched/break counts + total notional,
+          used by dashboard's "today at a glance" cards.
+ HOW:     REFRESH MATERIALIZED VIEW CONCURRENTLY (requires unique index).
+          Postgres-only. Refresh is a separate cron job (Day 6 task).
  WHY:     Computing daily stats over a partitioned 50M-row table on every
-          dashboard load is 600ms+; the matview read is ~5ms.
+          dashboard load = 600ms+. Matview read = ~5ms.
  OBSERVE: SELECT * FROM mv_daily_recon_summary returns one row per day.
-          REFRESH MATERIALIZED VIEW CONCURRENTLY succeeds without error.
+          REFRESH MATERIALIZED VIEW CONCURRENTLY mv_daily_recon_summary
+          succeeds without error.
  ============================================================================
 -->
 <databaseChangeLog
@@ -18,7 +19,8 @@
         xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
                             http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-4.27.xsd">
 
-    <changeSet id="005-mv-daily-recon-summary" author="trainer">
+    <changeSet id="005-mv-daily-recon-summary" author="trainer" labels="postgres-only,analytics">
+        <description>Create materialized view for daily recon summary aggregates</description>
         <preConditions onFail="MARK_RAN">
             <dbms type="postgresql"/>
         </preConditions>
