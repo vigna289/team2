@@ -2,12 +2,17 @@
 <!--
  ============================================================================
  TICKET-ADV132 / ADV137 / ADV138 — audit_log + recon_breaks + recon_jobs
- WHAT:    audit_log: append-only event row per trade event (used by
-          AuditEventConsumer + event-sourcing rebuild). recon_breaks: open
-          break details with discrepancy type. recon_jobs: async recon job
-          tracking for POST /api/v1/recon/run.
+ WHAT:    audit_log: append-only event rows per trade change (event sourcing).
+          recon_breaks: open break details with discrepancy type.
+          recon_jobs: async recon job tracking for POST /api/v1/recon/run.
+ HOW:     Three <createTable> with constraints and indexes.
+          Preconditions guard each so re-runs skip if table exists.
  WHY:     Without audit_log, "show me every change to this trade" is not
           answerable. Without recon_breaks, breaks live in app memory only.
+          Without recon_jobs, no async job tracking or progress feedback.
+ OBSERVE: SELECT COUNT(*) FROM audit_log returns rows per trade edit.
+          SELECT * FROM recon_breaks shows open discrepancies.
+          SELECT * FROM recon_jobs shows completed/in-progress runs.
  ============================================================================
 -->
 <databaseChangeLog
@@ -16,7 +21,13 @@
         xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
                             http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-4.27.xsd">
 
-    <changeSet id="006-create-audit-log" author="trainer">
+    <changeSet id="006-create-audit-log" author="trainer" labels="core-schema,audit">
+        <description>Create audit_log table for event-sourced trade change history</description>
+        <preConditions onFail="MARK_RAN">
+            <not>
+                <tableExists tableName="audit_log"/>
+            </not>
+        </preConditions>
         <createTable tableName="audit_log">
             <column name="id" type="BIGINT" autoIncrement="true">
                 <constraints primaryKey="true"/>
@@ -37,7 +48,13 @@
         </rollback>
     </changeSet>
 
-    <changeSet id="006-create-recon-breaks" author="trainer">
+    <changeSet id="006-create-recon-breaks" author="trainer" labels="core-schema,recon">
+        <description>Create recon_breaks table for tracking trade discrepancies</description>
+        <preConditions onFail="MARK_RAN">
+            <not>
+                <tableExists tableName="recon_breaks"/>
+            </not>
+        </preConditions>
         <createTable tableName="recon_breaks">
             <column name="id" type="BIGINT" autoIncrement="true">
                 <constraints primaryKey="true"/>
@@ -57,7 +74,13 @@
         </rollback>
     </changeSet>
 
-    <changeSet id="006-create-recon-jobs" author="trainer">
+    <changeSet id="006-create-recon-jobs" author="trainer" labels="core-schema,recon">
+        <description>Create recon_jobs table for async reconciliation job tracking</description>
+        <preConditions onFail="MARK_RAN">
+            <not>
+                <tableExists tableName="recon_jobs"/>
+            </not>
+        </preConditions>
         <createTable tableName="recon_jobs">
             <column name="id" type="BIGINT" autoIncrement="true">
                 <constraints primaryKey="true"/>

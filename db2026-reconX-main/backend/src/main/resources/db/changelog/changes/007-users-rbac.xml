@@ -1,14 +1,15 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!--
  ============================================================================
- TICKET-ADV074 — RBAC: users table + 4 roles
- WHAT:    users(id, email, password_hash, role, enabled) — minimal schema for
-          JWT auth. Roles: ADMIN, TRADER, VIEWER, RECON_ANALYST.
+ TICKET-ADV074 — RBAC: users table with 4 roles
+ WHAT:    users(id, email, password_hash, role, enabled) — minimal schema
+          for JWT auth. Roles: ADMIN, TRADER, VIEWER, RECON_ANALYST.
  HOW:     password_hash uses BCrypt (60 chars). Role stored as VARCHAR
           (UserDetailsService maps to ROLE_ prefix at runtime).
- WHY:     Database-backed auth means the demo isn't tied to a single
-          in-memory user list — students can add/remove roles via the admin
-          endpoint.
+ WHY:     Database-backed auth means demo isn't tied to a single in-memory
+          user list — students can add/remove users/roles via admin endpoint.
+ OBSERVE: SELECT COUNT(*) FROM users returns 4 (seeded in 008-seed-users).
+          Spring Security resolves roles correctly on login.
  ============================================================================
 -->
 <databaseChangeLog
@@ -17,7 +18,13 @@
         xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
                             http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-4.27.xsd">
 
-    <changeSet id="007-create-users" author="trainer">
+    <changeSet id="007-create-users" author="trainer" labels="core-schema,rbac">
+        <description>Create users table for RBAC with 4 roles (ADMIN, TRADER, VIEWER, RECON_ANALYST)</description>
+        <preConditions onFail="MARK_RAN">
+            <not>
+                <tableExists tableName="users"/>
+            </not>
+        </preConditions>
         <createTable tableName="users">
             <column name="id" type="BIGINT" autoIncrement="true">
                 <constraints primaryKey="true"/>

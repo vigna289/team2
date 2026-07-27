@@ -1,18 +1,15 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!--
  ============================================================================
- Convert trades to a monthly RANGE-partitioned table
+ TICKET-ADV008 — Convert trades to monthly RANGE-partitioned table
  WHAT:    trades parent partitioned by RANGE (trade_date), with monthly
           child partitions (Apr-Jul 2026) plus a trades_default catch-all.
- HOW:     PK must include the partition column, so PRIMARY KEY (id, trade_date).
-          Postgres-only; H2 has no native partitioning, so this is gated
-          behind a dbms precondition.
- WHY:     EOD recon queries and the mv_daily_recon_summary refresh (ADV008)
-          filter on trade_date. Partition pruning turns a full-table scan
-          into a single-month scan.
- OBSERVE: \d+ trades shows "Partition key: RANGE (trade_date)" with each
-          child listed underneath. EXPLAIN ANALYZE on a single trade_date
-          shows only that month's partition being scanned.
+ HOW:     PK includes partition column: PRIMARY KEY (id, trade_date).
+          Postgres-only; H2 has no native partitioning.
+ WHY:     EOD recon queries filter on trade_date. Partition pruning turns
+          a full-table scan into a single-month scan (~50M rows → 100K rows).
+ OBSERVE: \d+ trades shows "Partition key: RANGE (trade_date)".
+          EXPLAIN ANALYZE on single trade_date shows one child partition only.
  ============================================================================
 -->
 <databaseChangeLog
@@ -21,7 +18,8 @@
         xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
                             http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-4.27.xsd">
 
-    <changeSet id="004-partitioning" author="trainer">
+    <changeSet id="004-partitioning" author="trainer" labels="postgres-only,performance">
+        <description>Convert trades table to monthly RANGE partitions on trade_date</description>
         <preConditions onFail="MARK_RAN">
             <dbms type="postgresql"/>
         </preConditions>
