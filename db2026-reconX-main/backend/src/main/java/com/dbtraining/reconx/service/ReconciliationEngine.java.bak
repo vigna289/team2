@@ -121,19 +121,19 @@ public class ReconciliationEngine {
     private BigDecimal[] priceQty(TradeType t) {
         return switch (t) {
             case EquityTrade e -> new BigDecimal[]{e.price(), e.quantity()};
-            case FXTrade f -> new BigDecimal[]{f.fxRate(), f.notionalCcy1()};
+            case FXTrade f -> new BigDecimal[]{f.rate(), f.quantity()};
             case BondTrade b -> new BigDecimal[]{b.faceValue(), BigDecimal.ONE};
             case DerivativeTrade d -> new BigDecimal[]{d.strike(), d.quantity()};
         };
     }
 
-    /** Helper: get counterparty id for grouping; returns string form of the long id. */
+    /** Helper: get counterparty id for grouping; exhaustive on the sealed types. */
     private String counterpartyIdOf(TradeType t) {
         return switch (t) {
-            case EquityTrade e -> Long.toString(e.counterpartyId());
-            case FXTrade f -> Long.toString(f.counterpartyId());
-            case BondTrade b -> Long.toString(b.counterpartyId());
-            case DerivativeTrade d -> Long.toString(d.counterpartyId());
+            case EquityTrade e -> e.counterpartyId();
+            case FXTrade f -> f.counterpartyId();
+            case BondTrade b -> b.counterpartyId();
+            case DerivativeTrade d -> d.counterpartyId();
         };
     }
 }
