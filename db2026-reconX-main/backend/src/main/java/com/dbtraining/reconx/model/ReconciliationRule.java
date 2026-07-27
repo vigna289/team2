@@ -1,20 +1,13 @@
 package com.dbtraining.reconx.model;
 
 import java.math.BigDecimal;
+import java.math.RoundingMode;
 
 /**
- * ============================================================================
- * TICKET-ADV026 — ReconciliationRule enum with configurable thresholds
- *
- * WHAT:    Each enum value carries its own price tolerance (%) and quantity
- *          tolerance (absolute units). {@link #matches} returns true if the
- *          internal vs external trade pair is within tolerance.
- * HOW:     Enum-with-state pattern — instance fields + a behaviour method.
- * WHY:     Putting the rule on the enum keeps "what is a match" co-located
- *          with the rule's name, so the reconciliation engine is just:
- *          `if (rule.matches(internal, external)) ... matched ...`.
- * OBSERVE: PRICE_TOLERANCE_1PCT.matches(p, p*1.005) is true; *1.02 is false.
- * ============================================================================
+ * Enum-with-state: each constant carries its own price tolerance (%) and
+ * quantity tolerance (absolute units). matches() returns true only if BOTH
+ * the price diff (as %) and the qty diff (as abs) are within tolerance.
+ * BigDecimal.compareTo only — no double, no ==.
  */
 public enum ReconciliationRule {
 
@@ -36,18 +29,19 @@ public enum ReconciliationRule {
     public BigDecimal qtyToleranceAbs()   { return qtyToleranceAbs; }
 
     /**
-     * Decide whether two prices/quantities are within this rule's tolerance.
-     * @return true if BOTH the price diff (as %) AND the qty diff (as abs)
-     *         are within tolerance.
+     * @return true if both the price diff (as %) and the qty diff (as abs)
+     *         are within this rule's tolerance.
      */
     public boolean matches(BigDecimal internalPrice, BigDecimal internalQty,
                            BigDecimal externalPrice, BigDecimal externalQty) {
-        // TODO(TICKET-ADV026):
-        //   1. Compute |internalPrice - externalPrice| as priceDiff.
-        //   2. priceDiffPct = priceDiff / internalPrice (guard divide-by-zero).
-        //   3. qtyDiff = |internalQty - externalQty|.
-        //   4. Return true iff priceDiffPct <= priceTolerancePct AND
-        //      qtyDiff <= qtyToleranceAbs.
-        throw new UnsupportedOperationException("TICKET-ADV026");
+        BigDecimal priceDiff = internalPrice.subtract(externalPrice).abs();
+        BigDecimal priceDiffPct = internalPrice.signum() == 0
+                ? BigDecimal.ZERO
+                : priceDiff.divide(internalPrice, 6, RoundingMode.HALF_UP);
+        BigDecimal qtyDiff = internalQty.subtract(externalQty).abs();
+
+        boolean priceOk = priceDiffPct.compareTo(priceTolerancePct) <= 0;
+        boolean qtyOk   = qtyDiff.compareTo(qtyToleranceAbs) <= 0;
+        return priceOk && qtyOk;
     }
 }

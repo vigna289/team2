@@ -6,14 +6,9 @@ import java.math.BigDecimal;
 import java.time.LocalDate;
 
 /**
- * ============================================================================
- * TICKET-ADV053 — TradeRequest DTO (POST body)
- * TICKET-ADV029 — JSR-380 validation annotations live on the DTO, not the entity
- *
- * WHY:    Putting @Pattern/@Positive/@NotNull on the JPA entity couples
- *         persistence to wire format. The DTO is the wire contract; validate
- *         it before mapping.
- * ============================================================================
+ * TradeRequest DTO (POST body). JSR-380 validation lives here, not on the
+ * JPA entity — the DTO is the wire contract; the domain Builder (ADV019-022)
+ * is the second line of defence.
  */
 public record TradeRequest(
         @NotNull
