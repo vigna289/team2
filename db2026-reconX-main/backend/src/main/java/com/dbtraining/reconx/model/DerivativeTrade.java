@@ -5,15 +5,6 @@ import java.time.LocalDate;
 import java.util.Currency;
 import java.util.Objects;
 
-/**
- * ============================================================================
- * TICKET-ADV022 — DerivativeTrade with Builder pattern
- *
- * WHAT:    Option/derivative trade — underlying, strike, expiry, optionType.
- * HOW:     Same builder pattern. notional() = strike * quantity in the
- *          trade's currency (simplified — real derivatives use delta-adjusted).
- * ============================================================================
- */
 public final class DerivativeTrade implements TradeType {
 
     public enum OptionType { CALL, PUT }
@@ -47,12 +38,7 @@ public final class DerivativeTrade implements TradeType {
     @Override public TradeRef tradeRef()     { return tradeRef; }
     @Override public LocalDate tradeDate()   { return tradeDate; }
     @Override public AssetClass assetClass() { return AssetClass.DERIVATIVE; }
-
-    /** Simplified notional = strike * quantity in the trade currency. */
-    @Override public Money notional() {
-        // TODO(TICKET-ADV022): return new Money(strike * quantity, currency).
-        throw new UnsupportedOperationException("TICKET-ADV022");
-    }
+    @Override public Money notional()        { return new Money(strike.multiply(quantity), currency); }
 
     public String underlying()       { return underlying; }
     public BigDecimal strike()       { return strike; }
@@ -63,18 +49,19 @@ public final class DerivativeTrade implements TradeType {
     public Side side()               { return side; }
     public long counterpartyId()     { return counterpartyId; }
 
-    @Override public boolean equals(Object o) {
-        // TODO(TICKET-ADV028): pattern-match on DerivativeTrade and compare tradeRef.
-        throw new UnsupportedOperationException("TICKET-ADV028");
-    }
-    @Override public int hashCode() {
-        // TODO(TICKET-ADV028): hash from tradeRef.
-        throw new UnsupportedOperationException("TICKET-ADV028");
+    @Override
+    public boolean equals(Object o) {
+        return (o instanceof DerivativeTrade other) && tradeRef.equals(other.tradeRef);
     }
 
-    @Override public String toString() {
-        // TODO(TICKET-ADV030): "DerivativeTrade[ref=..., TYPE UNDERLYING on date, strike=... CCY, qty=..., expiry=..., side=...]"
-        throw new UnsupportedOperationException("TICKET-ADV030");
+    @Override public int hashCode() { return tradeRef.hashCode(); }
+
+    // NOTE: deliberately omits counterpartyId (PII line for this codebase).
+    @Override
+    public String toString() {
+        return "DerivativeTrade[ref=%s, %s %s on %s, strike=%s %s, qty=%s, expiry=%s, side=%s]"
+                .formatted(tradeRef, optionType, underlying, tradeDate, strike,
+                           currency.getCurrencyCode(), quantity, expiry, side);
     }
 
     public static final class Builder {
@@ -98,13 +85,33 @@ public final class DerivativeTrade implements TradeType {
         public Builder tradeDate(LocalDate v)      { this.tradeDate = v; return this; }
         public Builder counterpartyId(long v)      { this.counterpartyId = v; return this; }
 
+        /**
+         * @return a fully-constructed, validated DerivativeTrade — never null.
+         * @throws NullPointerException  if any required field was not set.
+         * @throws IllegalStateException if strike/quantity are not strictly
+         *                                positive, or expiry is before
+         *                                tradeDate. An already-expired
+         *                                option (relative to today) is still
+         *                                accepted — see class notes.
+         */
         public DerivativeTrade build() {
-            // TODO(TICKET-ADV022):
-            //   - Objects.requireNonNull each required field.
-            //   - strike and quantity must be > 0.
-            //   - expiry must not be before tradeDate.
-            //   - return new DerivativeTrade(this).
-            throw new UnsupportedOperationException("TICKET-ADV022");
+            Objects.requireNonNull(tradeRef,   "tradeRef");
+            Objects.requireNonNull(underlying, "underlying");
+            Objects.requireNonNull(strike,     "strike");
+            Objects.requireNonNull(quantity,   "quantity");
+            Objects.requireNonNull(expiry,     "expiry");
+            Objects.requireNonNull(optionType, "optionType");
+            Objects.requireNonNull(currency,   "currency");
+            Objects.requireNonNull(side,       "side");
+            Objects.requireNonNull(tradeDate,  "tradeDate");
+            if (strike.signum() <= 0)   throw new IllegalStateException("strike must be > 0");
+            if (quantity.signum() <= 0) throw new IllegalStateException("quantity must be > 0");
+            // NOTE: expiry is only checked against tradeDate, never LocalDate.now() —
+            // a historical option that has already expired is still a valid record
+            // for replay and reconciliation (see TICKET-ADV022 rationale).
+            if (expiry.isBefore(tradeDate))
+                throw new IllegalStateException("expiry cannot be before tradeDate");
+            return new DerivativeTrade(this);
         }
     }
 }

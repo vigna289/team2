@@ -5,16 +5,6 @@ import java.time.LocalDate;
 import java.util.Currency;
 import java.util.Objects;
 
-/**
- * ============================================================================
- * TICKET-ADV021 — BondTrade with Builder pattern
- *
- * WHAT:    Fixed-income trade — couponRate, maturityDate, faceValue, isin.
- * HOW:     Same builder pattern. notional() = faceValue (in the bond's ccy).
- * WHY:     Bonds need couponRate/maturity for downstream cashflow modelling.
- *          Modelling them on the trade is the simplest path for the demo.
- * ============================================================================
- */
 public final class BondTrade implements TradeType {
 
     private final TradeRef tradeRef;
@@ -44,12 +34,7 @@ public final class BondTrade implements TradeType {
     @Override public TradeRef tradeRef()     { return tradeRef; }
     @Override public LocalDate tradeDate()   { return tradeDate; }
     @Override public AssetClass assetClass() { return AssetClass.BOND; }
-
-    /** Notional = faceValue in the bond's currency. */
-    @Override public Money notional() {
-        // TODO(TICKET-ADV021): return new Money(faceValue, currency).
-        throw new UnsupportedOperationException("TICKET-ADV021");
-    }
+    @Override public Money notional()        { return new Money(faceValue, currency); }
 
     public String isin()              { return isin; }
     public BigDecimal faceValue()     { return faceValue; }
@@ -59,18 +44,19 @@ public final class BondTrade implements TradeType {
     public Side side()                { return side; }
     public long counterpartyId()      { return counterpartyId; }
 
-    @Override public boolean equals(Object o) {
-        // TODO(TICKET-ADV028): pattern-match on BondTrade and compare tradeRef.
-        throw new UnsupportedOperationException("TICKET-ADV028");
-    }
-    @Override public int hashCode() {
-        // TODO(TICKET-ADV028): hash from tradeRef.
-        throw new UnsupportedOperationException("TICKET-ADV028");
+    @Override
+    public boolean equals(Object o) {
+        return (o instanceof BondTrade other) && tradeRef.equals(other.tradeRef);
     }
 
-    @Override public String toString() {
-        // TODO(TICKET-ADV030): "BondTrade[ref=..., isin=..., face=... CCY, coupon=..., maturity=..., side=...]"
-        throw new UnsupportedOperationException("TICKET-ADV030");
+    @Override public int hashCode() { return tradeRef.hashCode(); }
+
+    // NOTE: deliberately omits counterpartyId (PII line for this codebase).
+    @Override
+    public String toString() {
+        return "BondTrade[ref=%s, isin=%s, face=%s %s, coupon=%s, maturity=%s, side=%s]"
+                .formatted(tradeRef, isin, faceValue, currency.getCurrencyCode(),
+                           couponRate, maturityDate, side);
     }
 
     public static final class Builder {
@@ -92,12 +78,24 @@ public final class BondTrade implements TradeType {
         public Builder tradeDate(LocalDate v)      { this.tradeDate = v; return this; }
         public Builder counterpartyId(long v)      { this.counterpartyId = v; return this; }
 
+        /**
+         * @return a fully-constructed, validated BondTrade — never null.
+         * @throws NullPointerException  if any required field was not set.
+         * @throws IllegalStateException if maturityDate is not strictly
+         *                                after tradeDate.
+         */
         public BondTrade build() {
-            // TODO(TICKET-ADV021):
-            //   - Objects.requireNonNull each required field.
-            //   - maturityDate must not be before tradeDate (IllegalStateException otherwise).
-            //   - return new BondTrade(this).
-            throw new UnsupportedOperationException("TICKET-ADV021");
+            Objects.requireNonNull(tradeRef,     "tradeRef");
+            Objects.requireNonNull(isin,         "isin");
+            Objects.requireNonNull(faceValue,    "faceValue");
+            Objects.requireNonNull(couponRate,   "couponRate");
+            Objects.requireNonNull(maturityDate, "maturityDate");
+            Objects.requireNonNull(currency,     "currency");
+            Objects.requireNonNull(side,         "side");
+            Objects.requireNonNull(tradeDate,    "tradeDate");
+            if (maturityDate.isBefore(tradeDate))
+                throw new IllegalStateException("maturityDate cannot be before tradeDate");
+            return new BondTrade(this);
         }
     }
 }

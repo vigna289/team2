@@ -26,10 +26,11 @@ import java.util.stream.Collectors;
 public class ReconciliationEngine {
 
     @Timed(value = "reconciliation.duration", description = "Wall time of reconcile()",
-           percentiles = {0.5, 0.95, 0.99}, histogram = true)
+            percentiles = {0.5, 0.95, 0.99}, histogram = true)
     public List<ReconResult> reconcile(List<TradeType> internal,
                                        List<TradeType> external,
                                        ReconciliationRule rule) {
+
         // Guard: null or empty inputs → empty result list
         if (internal == null || internal.isEmpty()) {
             return List.of();
@@ -73,19 +74,26 @@ public class ReconciliationEngine {
         // For each counterparty, reconcile in its own CompletableFuture
         List<CompletableFuture<List<ReconResult>>> futures = internalByCp.entrySet().stream()
                 .map(entry -> CompletableFuture.supplyAsync(() ->
-                        reconcile(entry.getValue(), externalByCp.getOrDefault(entry.getKey(), List.of()), rule)
+                        reconcile(entry.getValue(),
+                                externalByCp.getOrDefault(entry.getKey(), List.of()),
+                                rule)
                 ))
                 .toList();
 
         // Wait for all and combine
-        CompletableFuture<Void> all = CompletableFuture.allOf(futures.toArray(new CompletableFuture[0]));
+        CompletableFuture<Void> all = CompletableFuture.allOf(
+                futures.toArray(new CompletableFuture[0]));
+
         return all.thenApply(v -> futures.stream()
                         .flatMap(f -> f.join().stream())
-                        .toList()
-        ).join();
+                        .toList())
+                .join();
     }
 
-    private ReconResult matchOne(TradeType internal, TradeType external, ReconciliationRule rule) {
+    private ReconResult matchOne(TradeType internal,
+                                 TradeType external,
+                                 ReconciliationRule rule) {
+
         String ref = internal.tradeRef().value();
 
         if (external == null) {
@@ -113,7 +121,12 @@ public class ReconciliationEngine {
         return ReconResult.breakResult(
                 ref,
                 "VALUE_MISMATCH",
-                "Price or quantity mismatch"
+                "internal=%s/%s external=%s/%s".formatted(
+                        internalValues[0],
+                        internalValues[1],
+                        externalValues[0],
+                        externalValues[1]
+                )
         );
     }
 
@@ -127,7 +140,7 @@ public class ReconciliationEngine {
         };
     }
 
-    /** Helper: get counterparty id for grouping; returns string form of the long id. */
+    /** Helper: get counterparty id for grouping. */
     private String counterpartyIdOf(TradeType t) {
         return switch (t) {
             case EquityTrade e -> Long.toString(e.counterpartyId());

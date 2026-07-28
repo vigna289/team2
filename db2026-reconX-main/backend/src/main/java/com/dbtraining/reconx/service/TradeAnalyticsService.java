@@ -56,7 +56,7 @@ public class TradeAnalyticsService {
      * TICKET-ADV035 — VWAP = SUM(price * qty) / SUM(qty). Equity-only.
      *
      * Uses a custom Collector (VwapCollector) to compute VWAP in a
-     * parallel-safe way and return BigDecimal scaled to 6 decimal places
+     * parallel-safe way and return BigDecimal scaled to 4 decimal places
      * with RoundingMode.HALF_UP. Empty input -> BigDecimal.ZERO.
      */
     public Map<String, BigDecimal> vwapByInstrument(List<EquityTrade> equityTrades) {
@@ -108,7 +108,8 @@ public class TradeAnalyticsService {
      * Accumulator holds sumPriceQty and sumQty. Combiner returns a fresh accumulator
      * combining both inputs' sums (important for parallel safety).
      *
-     * Produces BigDecimal scaled to 6 decimal places, HALF_UP. Empty accumulator -> BigDecimal.ZERO.
+     * Produces BigDecimal scaled to 4 decimal places, HALF_UP.
+     * Empty accumulator -> BigDecimal.ZERO.
      */
     private static final class VwapCollector implements Collector<EquityTrade, VwapCollector.Acc, BigDecimal> {
 
@@ -138,7 +139,6 @@ public class TradeAnalyticsService {
         @Override
         public BiConsumer<Acc, EquityTrade> accumulator() {
             return (acc, t) -> {
-                // price * qty
                 BigDecimal priceQty = t.price().multiply(t.quantity());
                 acc.sumPriceQty = acc.sumPriceQty.add(priceQty);
                 acc.sumQty = acc.sumQty.add(t.quantity());
@@ -147,8 +147,11 @@ public class TradeAnalyticsService {
 
         @Override
         public BinaryOperator<Acc> combiner() {
-            // Return a fresh accumulator combining the two inputs (do not mutate and return one of the inputs).
-            return (a, b) -> new Acc(a.sumPriceQty.add(b.sumPriceQty), a.sumQty.add(b.sumQty));
+            // Return a fresh accumulator for parallel safety.
+            return (a, b) -> new Acc(
+                    a.sumPriceQty.add(b.sumPriceQty),
+                    a.sumQty.add(b.sumQty)
+            );
         }
 
         @Override
@@ -163,7 +166,6 @@ public class TradeAnalyticsService {
 
         @Override
         public Set<Characteristics> characteristics() {
-            // UNORDERED is appropriate (order doesn't matter for sums); no IDENTITY_FINISH because finish maps to BigDecimal.
             return Collections.singleton(Characteristics.UNORDERED);
         }
     }

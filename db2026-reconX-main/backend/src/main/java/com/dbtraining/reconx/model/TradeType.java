@@ -4,29 +4,10 @@ import java.time.LocalDate;
 import java.util.Comparator;
 
 /**
- * ============================================================================
- * TICKET-ADV018 — Sealed interface TradeType
- *
- * WHAT:    Sealed root of the trade hierarchy. Only the four named
- *          permitted classes can implement it. Any new asset class needs an
- *          explicit code change here — by design.
- * HOW:     `sealed ... permits ...` on Java 21.
- * WHY:     Without sealing, anyone could write their own `Trade` subclass and
- *          slip through the reconciliation engine's pattern-matching switch.
- *          Sealing turns the engine's switch into an exhaustive one — the
- *          compiler enforces that every case is handled.
- * OBSERVE: Removing `permits BondTrade` causes a compile error in
- *          ReconciliationEngine's switch expression.
- * HINT:    See Day 2 trainer guide §"Sprint 1A — sealed hierarchy" for the
- *          design discussion.
- * ============================================================================
- *
- * TICKET-ADV027 — Comparable natural ordering (most-recent trade first)
- * TICKET-ADV028 — equals/hashCode based on tradeRef (the natural key)
- *
- * Comparator lives on the sealed interface, so every impl shares the same
- * ordering rule — there is no per-class compareTo override to forget to
- * update when adding a new field.
+ * Sealed root of the trade hierarchy. Only the four named permitted classes
+ * can implement it. Comparable natural ordering: most-recent trade first,
+ * ties broken by tradeRef ascending. Kept consistent with equals/hashCode
+ * (TICKET-ADV028), which is also keyed on tradeRef.
  */
 public sealed interface TradeType
         extends Comparable<TradeType>
