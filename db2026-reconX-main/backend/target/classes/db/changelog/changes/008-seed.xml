@@ -1,0 +1,78 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+ ============================================================================
+ TICKET-ADV010 — Seed data: counterparties, instruments, users
+ WHAT:    Loads CSV files (counterparties, instruments) and inserts 4 seed
+          users with BCrypt-hashed passwords (cost=10).
+ HOW:     <loadData> reads from classpath; paths relative to changeset file.
+          CSV headers must match column names. <insert> for hardcoded users.
+ WHY:     Trainer copy ships seeded so dashboard isn't empty on first boot.
+          Student copy remains empty (seed changesets are optional).
+ OBSERVE: SELECT COUNT(*) FROM counterparties returns 5 (from CSV).
+          SELECT COUNT(*) FROM instruments returns ~10 (from CSV).
+          SELECT COUNT(*) FROM users returns 4 (seeded users).
+ ============================================================================
+-->
+<databaseChangeLog
+        xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+                            http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-4.27.xsd">
+
+    <changeSet id="008-seed-counterparties" author="trainer" labels="seed-data">
+        <description>Load counterparties seed data from CSV</description>
+        <preConditions onFail="MARK_RAN">
+            <rowCount tableName="counterparties" expectedRows="0"/>
+        </preConditions>
+        <loadData file="data/counterparties.csv" tableName="counterparties"
+                  separator="," relativeToChangelogFile="true">
+            <column name="region" type="STRING"/>
+        </loadData>
+        <rollback>
+            <delete tableName="counterparties"/>
+        </rollback>
+    </changeSet>
+
+    <changeSet id="008-seed-instruments" author="trainer" labels="seed-data">
+        <description>Load instruments seed data from CSV</description>
+        <preConditions onFail="MARK_RAN">
+            <rowCount tableName="instruments" expectedRows="0"/>
+        </preConditions>
+        <loadData file="data/instruments.csv" tableName="instruments"
+                  separator="," relativeToChangelogFile="true">
+            <column name="isin" type="STRING"/>
+        </loadData>
+        <rollback>
+            <delete tableName="instruments"/>
+        </rollback>
+    </changeSet>
+
+    <changeSet id="008-seed-users" author="trainer" labels="seed-data,rbac">
+        <description>Insert 4 seed users with BCrypt-hashed passwords (admin, trader, viewer, recon)</description>
+        <preConditions onFail="MARK_RAN">
+            <rowCount tableName="users" expectedRows="0"/>
+        </preConditions>
+        <!-- Real BCrypt hashes (cost=10) for admin123 / trader123 / viewer123 / recon123.
+             Spring Security's BCryptPasswordEncoder accepts both $2a$ and $2y$ prefixes. -->
+        <insert tableName="users">
+            <column name="email" value="admin@db.com"/>
+            <column name="role" value="ADMIN"/>
+        </insert>
+        <insert tableName="users">
+            <column name="email" value="trader@db.com"/>
+            <column name="role" value="TRADER"/>
+        </insert>
+        <insert tableName="users">
+            <column name="email" value="viewer@db.com"/>
+            <column name="role" value="VIEWER"/>
+        </insert>
+        <insert tableName="users">
+            <column name="email" value="recon@db.com"/>
+            <column name="role" value="RECON_ANALYST"/>
+        </insert>
+        <rollback>
+            <delete tableName="users"/>
+        </rollback>
+    </changeSet>
+
+</databaseChangeLog>
