@@ -36,30 +36,21 @@ public class ReconciliationEngine {
 
     @Timed(value = "reconciliation.duration", description = "Wall time of reconcile()",
            percentiles = {0.5, 0.95, 0.99}, histogram = true)
-    public List<ReconResult> reconcile(List<TradeType> internal,
-                                       List<TradeType> external,
-                                       ReconciliationRule rule) {
-        // TODO(TICKET-ADV033): build a Map<tradeRef, TradeType> from `external`
-        //   (O(1) lookups beat O(n*m) nested iteration), then parallelStream
-        //   over `internal` and call matchOne(in, externalByRef.get(...), rule)
-        //   for each. Guard against null/empty inputs (TICKET-ADV047).
-        //   HINT:
-        //     Map<String, TradeType> externalByRef = external.stream()
-        //         .collect(Collectors.toMap(t -> t.tradeRef().value(), Function.identity(), (a, b) -> a));
-        //     return internal.parallelStream()
-        //         .map(in -> matchOne(in, externalByRef.get(in.tradeRef().value()), rule))
-        //         .toList();
-        if (internal == null || internal.isEmpty()) {
-            return List.of();
-        }
+    
+       public List<ReconResult> reconcile(List<TradeType> internal,
+                                   List<TradeType> external,
+                                   ReconciliationRule rule) {
 
-        Map<String, TradeType> externalByRef = (external == null ? List.<TradeType>of() : external)
-                .stream()
-                .collect(Collectors.toMap(t -> t.tradeRef().value(), Function.identity(), (a, b) -> a));
+    if (internal == null || internal.isEmpty()) return List.of();
 
-        return internal.parallelStream()
-                .map(in -> matchOne(in, externalByRef.get(in.tradeRef().value()), rule))
-                .toList();
+    Map<String, TradeType> externalByRef = (external == null ? List.<TradeType>of() : external)
+            .stream()
+            .collect(Collectors.toMap(t -> t.tradeRef().value(), Function.identity(), (a, b) -> a));
+
+    return internal.parallelStream()
+            .map(in -> matchOne(in, externalByRef.get(in.tradeRef().value()), rule))
+            .toList();
+}
     }
 
     /**
