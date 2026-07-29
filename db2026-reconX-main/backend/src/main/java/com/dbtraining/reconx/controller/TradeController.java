@@ -1,113 +1,163 @@
-package com.dbtraining.reconx.controller;
+package com.dbtraining.reconx.service;
 
-import com.dbtraining.reconx.dto.PagedResponse;
-import com.dbtraining.reconx.dto.TradeMapper;
-import com.dbtraining.reconx.dto.TradeRequest;
-import com.dbtraining.reconx.dto.TradeResponse;
-import com.dbtraining.reconx.repository.entity.Trade;
-import com.dbtraining.reconx.service.TradeService;
-import io.swagger.v3.oas.annotations.Operation;
-import io.swagger.v3.oas.annotations.security.SecurityRequirement;
-import io.swagger.v3.oas.annotations.tags.Tag;
-import jakarta.validation.Valid;
-import org.springframework.data.domain.Page;
-import org.springframework.data.domain.Pageable;
-import org.springframework.data.domain.Sort;
-import org.springframework.data.web.PageableDefault;
-import org.springframework.http.ResponseEntity;
-import org.springframework.security.core.annotation.AuthenticationPrincipal;
-import org.springframework.web.bind.annotation.*;
+import com.dbtraining.reconx.dto.ReconResult;
+import com.dbtraining.reconx.model.BondTrade;
+import com.dbtraining.reconx.model.DerivativeTrade;
+import com.dbtraining.reconx.model.EquityTrade;
+import com.dbtraining.reconx.model.FXTrade;
+import com.dbtraining.reconx.model.ReconciliationRule;
+import com.dbtraining.reconx.model.TradeType;
+import io.micrometer.core.annotation.Timed;
+import org.springframework.stereotype.Service;
 
-import java.net.URI;
-import java.time.LocalDate;
-import java.net.URI;
+import java.math.BigDecimal;
+import java.util.List;
 import java.util.Map;
+import java.util.concurrent.CompletableFuture;
+import java.util.function.Function;
+import java.util.stream.Collectors;
 
 /**
- * ============================================================================
- * TICKET-ADV063-ADV067 — TradeController (full CRUD + filterable list)
- * TICKET-ADV080 — API versioning: every endpoint under /v1/
- *
- * Combined with the /api context-path from application.yml, full URLs are
- * /api/v1/trades, /api/v1/trades/{id} etc.
- * ============================================================================
+ * ReconciliationEngine — index externals for O(1) lookups, stream internals,
+ * and produce ReconResult per internal trade. Also provides a batched
+ * reconcileByCounterparty that runs each counterparty batch concurrently.
  */
-@RestController
-@RequestMapping("/v1/trades")
-@Tag(name = "trades", description = "Trade CRUD and search")
-@SecurityRequirement(name = "bearerAuth")
-public class TradeController {
+@Service
+public class ReconciliationEngine {
 
-    private final TradeService service;
-    private final TradeMapper mapper;
+    @Timed(
+            value = "reconciliation.duration",
+            description = "Wall time of reconcile()",
+            percentiles = {0.5, 0.95, 0.99},
+            histogram = true
+    )
+    public List<ReconResult> reconcile(List<TradeType> internal,
+                                       List<TradeType> external,
+                                       ReconciliationRule rule) {
 
-    public TradeController(TradeService service, TradeMapper mapper) {
-        this.service = service;
-        this.mapper = mapper;
+        // Guard: null or empty inputs → empty result list
+        if (internal == null || internal.isEmpty()) {
+            return List.of();
+        }
+
+        // Build external index (tradeRef -> TradeType). Treat null external as empty list.
+        Map<String, TradeType> externalByRef = (external == null ? List.<TradeType>of() : external)
+                .stream()
+                .collect(Collectors.toMap(
+                        t -> t.tradeRef().value(),
+                        Function.identity(),
+                        (first, second) -> first // keep first on duplicates
+                ));
+
+        // Stream internals in parallel and match each one via constant-time lookup.
+        return internal.parallelStream()
+                .map(in -> matchOne(in, externalByRef.get(in.tradeRef().value()), rule))
+                .toList();
     }
 
-    @GetMapping
-@Operation(summary = "List trades — paginated, filterable, sortable")
-public PagedResponse<TradeResponse> list(
-        @RequestParam(required = false) LocalDate from,
-        @RequestParam(required = false) LocalDate to,
-        @RequestParam(required = false) String status,
-        @RequestParam(required = false) Long counterpartyId,
-        @PageableDefault(size = 20, sort = "tradeDate", direction = Sort.Direction.DESC)
-        Pageable pageable) {
+    /**
+     * Reconcile by counterparty: inputs are lists containing many counterparties.
+     * We group each side by counterparty id and reconcile each counterparty in its own
+     * async task, then combine the results.
+     */
+    public List<ReconResult> reconcileByCounterparty(List<TradeType> internal,
+                                                     List<TradeType> external,
+                                                     ReconciliationRule rule) {
 
-    Page<Trade> trades =
-            service.list(from, to, status, counterpartyId, pageable);
+        if (internal == null || internal.isEmpty()) {
+            return List.of();
+        }
 
-    return PagedResponse.from(trades, mapper::toResponse);
-}
+        // Group both sides by counterparty id (null external handled as empty)
+        Map<String, List<TradeType>> internalByCp = internal.stream()
+                .collect(Collectors.groupingBy(this::counterpartyIdOf));
 
-    @PostMapping
-@Operation(summary = "Create a trade")
-public ResponseEntity<TradeResponse> create(
-        @Valid @RequestBody TradeRequest req,
-        @AuthenticationPrincipal Object principal) {
+        Map<String, List<TradeType>> externalByCp = (external == null ? List.<TradeType>of() : external)
+                .stream()
+                .collect(Collectors.groupingBy(this::counterpartyIdOf));
 
-    Trade saved = service.create(
-            req,
-            principal != null ? principal.toString() : "system"
-    );
+        // For each counterparty, reconcile in its own CompletableFuture
+        List<CompletableFuture<List<ReconResult>>> futures = internalByCp.entrySet()
+                .stream()
+                .map(entry -> CompletableFuture.supplyAsync(() ->
+                        reconcile(
+                                entry.getValue(),
+                                externalByCp.getOrDefault(entry.getKey(), List.of()),
+                                rule)))
+                .toList();
 
-    return ResponseEntity
-            .created(URI.create("/api/v1/trades/" + saved.getId()))
-            .body(mapper.toResponse(saved));
-}
+        // Wait for all and combine
+        CompletableFuture<Void> all =
+                CompletableFuture.allOf(futures.toArray(new CompletableFuture[0]));
 
-    @PutMapping("/{id}")
-@Operation(summary = "Full update of a trade")
-public TradeResponse update(@PathVariable Long id,
-                            @Valid @RequestBody TradeRequest req,
-                            @AuthenticationPrincipal Object principal) {
-
-    Trade updated = service.update(
-            id,
-            req,
-            principal != null ? principal.toString() : "system"
-    );
-
-    return mapper.toResponse(updated);
-}
-
-    @PatchMapping("/{id}/status")
-    @Operation(summary = "Update only the status field")
-    public TradeResponse updateStatus(@PathVariable Long id,
-                                      @RequestBody Map<String, String> body,
-                                      @AuthenticationPrincipal Object principal) {
-        // TODO(TICKET-ADV066): read body.get("status") and call
-        //   service.updateStatus(id, status, actor). Return mapper.toResponse(saved).
-        throw new UnsupportedOperationException("TICKET-ADV066");
+        return all.thenApply(v ->
+                        futures.stream()
+                                .flatMap(f -> f.join().stream())
+                                .toList())
+                .join();
     }
 
-    @DeleteMapping("/{id}")
-    @Operation(summary = "Soft delete (sets deleted_at)")
-    public ResponseEntity<Void> delete(@PathVariable Long id,
-                                       @AuthenticationPrincipal Object principal) {
-        // TODO(TICKET-ADV067): service.softDelete(id, actor); return 204 No Content.
-        throw new UnsupportedOperationException("TICKET-ADV067");
+    private ReconResult matchOne(TradeType internal,
+                                 TradeType external,
+                                 ReconciliationRule rule) {
+
+        String ref = internal.tradeRef().value();
+
+        if (external == null) {
+            return ReconResult.breakResult(
+                    ref,
+                    "MISSING_EXTERNAL",
+                    "No matching external trade found"
+            );
+        }
+
+        BigDecimal[] internalValues = priceQty(internal);
+        BigDecimal[] externalValues = priceQty(external);
+
+        boolean matches = rule.matches(
+                internalValues[0],
+                internalValues[1],
+                externalValues[0],
+                externalValues[1]
+        );
+
+        if (matches) {
+            return ReconResult.matched(ref);
+        }
+
+        return ReconResult.breakResult(
+                ref,
+                "VALUE_MISMATCH",
+                "internal=%s/%s external=%s/%s".formatted(
+                        internalValues[0],
+                        internalValues[1],
+                        externalValues[0],
+                        externalValues[1]
+                )
+        );
+    }
+
+    /**
+     * Exhaustive switch over the sealed TradeType hierarchy.
+     */
+    private BigDecimal[] priceQty(TradeType t) {
+        return switch (t) {
+            case EquityTrade e -> new BigDecimal[]{e.price(), e.quantity()};
+            case FXTrade f -> new BigDecimal[]{f.fxRate(), f.notionalCcy1()};
+            case BondTrade b -> new BigDecimal[]{b.faceValue(), BigDecimal.ONE};
+            case DerivativeTrade d -> new BigDecimal[]{d.strike(), d.quantity()};
+        };
+    }
+
+    /**
+     * Helper: get counterparty id for grouping.
+     */
+    private String counterpartyIdOf(TradeType t) {
+        return switch (t) {
+            case EquityTrade e -> Long.toString(e.counterpartyId());
+            case FXTrade f -> Long.toString(f.counterpartyId());
+            case BondTrade b -> Long.toString(b.counterpartyId());
+            case DerivativeTrade d -> Long.toString(d.counterpartyId());
+        };
     }
 }
