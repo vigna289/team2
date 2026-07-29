@@ -72,7 +72,7 @@ public class TradeController {
     @Operation(summary = "Full update of a trade")
     public TradeResponse update(@PathVariable Long id, @Valid @RequestBody TradeRequest req,
                                 @AuthenticationPrincipal Object principal) {
-        return mapper.toResponse(service.update(id, req));
+        return mapper.toResponse(service.update(id, req, String.valueOf(principal)));
     }
 
     @PatchMapping("/{id}/status")
@@ -80,14 +80,14 @@ public class TradeController {
     public TradeResponse updateStatus(@PathVariable Long id,
                                       @Valid @RequestBody StatusUpdate body,
                                       @AuthenticationPrincipal Object principal) {
-        return mapper.toResponse(service.updateStatus(id, body.status()));
+        return mapper.toResponse(service.updateStatus(id, body.status(), String.valueOf(principal)));
     }
 
     @DeleteMapping("/{id}")
     @Operation(summary = "Soft delete (sets deleted_at)")
     public ResponseEntity<Void> delete(@PathVariable Long id,
                                        @AuthenticationPrincipal Object principal) {
-        service.softDelete(id);
+        service.softDelete(id, String.valueOf(principal));
         return ResponseEntity.noContent().build();
     }
 }

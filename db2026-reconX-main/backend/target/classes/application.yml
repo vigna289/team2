@@ -13,11 +13,11 @@
 spring:
   application:
     name: reconx
-
   profiles:
     active: ${SPRING_PROFILES_ACTIVE:dev}
 
-  # ADV012 — Liquibase classpath wiring
+  # ADV012 — Liquibase classpath wiring (the classic starter bug is missing the
+  # `classpath:` prefix here, which causes a silent skip on JAR builds).
   liquibase:
     change-log: classpath:/db/changelog/db.changelog-master.xml
     enabled: true
@@ -27,18 +27,22 @@ spring:
     hibernate:
       ddl-auto: validate
     properties:
-      hibernate:
-        format_sql: true
-        jdbc:
-          time_zone: UTC
+      hibernate.format_sql: true
+      hibernate.jdbc.time_zone: UTC
 
-  # ADV081-ADV082 — Caffeine cache config
+  # ADV081-ADV082 — Caffeine cache config.
+  # NOTE: this global spec is superseded by the programmatic CacheManager bean
+  # in CacheConfig.java (ADV082), which gives "instruments" a 5-min TTL and
+  # "counterparties" a 1-min TTL individually. Spring uses whichever
+  # CacheManager bean is actually registered — CacheConfig's bean wins once
+  # it exists. Leaving cache-names here is harmless and documents intent.
   cache:
     cache-names: instruments,counterparties
     caffeine:
       spec: maximumSize=500,expireAfterWrite=5m
 
-  # ADV128 — Kafka defaults
+  # ADV128 — Kafka producer/consumer defaults. Topics are created at startup
+  # by KafkaTopicsConfig (see com.dbtraining.reconx.kafka.KafkaTopicsConfig).
   kafka:
     bootstrap-servers: ${KAFKA_BOOTSTRAP:localhost:9092}
     producer:
@@ -62,36 +66,37 @@ server:
 
 # =============================================================================
 # TICKET-ADV083-ADV086 / ADV097 — Actuator + Prometheus exposure
+#  Custom metrics registered by com.dbtraining.reconx.observability.TradeMetrics
+#  scrape via /actuator/prometheus. "caches" added for ADV081/082 cache stats.
 # =============================================================================
 management:
   endpoints:
     web:
-      base-path: /actuator
       exposure:
-        include: health,info,metrics,prometheus,env,loggers
-
+        include: health,info,metrics,prometheus,env,loggers,caches
+      base-path: /actuator
   endpoint:
     health:
       show-details: when_authorized
       probes:
         enabled: true
-
   metrics:
     distribution:
       percentiles-histogram:
         http.server.requests: true
-        reconciliation.duration: true
+        reconciliation.duration: true   # TICKET-ADV084 — required for histogram_quantile() to work
       percentiles:
         http.server.requests: 0.5, 0.95, 0.99
     tags:
       application: ${spring.application.name}
 
 # =============================================================================
-# TICKET-ADV072 — JWT signing config
+# TICKET-ADV072 — JWT signing config (NEVER commit a real secret; override per env)
 # =============================================================================
 reconx:
   security:
     jwt:
+      # dev secret only — UAT/PROD MUST override via env var
       secret: ${JWT_SECRET:dev-secret-change-me-32-bytes-min!!}
       expiration-minutes: ${JWT_EXP_MIN:60}
       refresh-expiration-days: ${JWT_REFRESH_EXP_DAYS:7}
@@ -102,7 +107,6 @@ logging:
     com.dbtraining.reconx: INFO
     org.springframework.web: INFO
     org.hibernate.SQL: WARN
-
   pattern:
     correlation: "[%X{correlationId:-}] [%X{tradeRef:-}]"
 
@@ -111,6 +115,5 @@ springdoc:
     path: /swagger-ui.html
     tagsSorter: alpha
     operationsSorter: alpha
-
   api-docs:
     path: /v3/api-docs
