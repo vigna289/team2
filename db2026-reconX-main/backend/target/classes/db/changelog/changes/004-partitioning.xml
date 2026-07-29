@@ -1,0 +1,75 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+ ============================================================================
+ TICKET-ADV008 — Convert trades to monthly RANGE-partitioned table
+ WHAT:    trades parent partitioned by RANGE (trade_date), with monthly
+          child partitions (Apr-Jul 2026) plus a trades_default catch-all.
+ HOW:     PK includes partition column: PRIMARY KEY (id, trade_date).
+          Postgres-only; H2 has no native partitioning.
+ WHY:     EOD recon queries filter on trade_date. Partition pruning turns
+          a full-table scan into a single-month scan (~50M rows → 100K rows).
+ OBSERVE: \d+ trades shows "Partition key: RANGE (trade_date)".
+          EXPLAIN ANALYZE on single trade_date shows one child partition only.
+ ============================================================================
+-->
+<databaseChangeLog
+        xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+                            http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-4.27.xsd">
+
+    <changeSet id="004-partitioning" author="trainer" labels="postgres-only,performance">
+        <description>Convert trades table to monthly RANGE partitions on trade_date</description>
+        <preConditions onFail="MARK_RAN">
+            <dbms type="postgresql"/>
+        </preConditions>
+        <sql splitStatements="false"><![CDATA[
+            -- 1. Rename existing table out of the way
+            ALTER TABLE trades RENAME TO trades_legacy;
+
+            -- 2. Create partitioned parent (same columns, PK includes trade_date)
+            CREATE TABLE trades (
+                id              BIGSERIAL,
+                trade_ref       VARCHAR(30)   NOT NULL,
+                instrument_id   BIGINT        NOT NULL REFERENCES instruments(id),
+                counterparty_id BIGINT        NOT NULL REFERENCES counterparties(id),
+                asset_class     VARCHAR(20)   NOT NULL,
+                side            VARCHAR(4)    NOT NULL,
+                quantity        NUMERIC(18,4) NOT NULL,
+                price           NUMERIC(18,4) NOT NULL,
+                trade_date      DATE          NOT NULL,
+                status          VARCHAR(20)   NOT NULL DEFAULT 'PENDING',
+                deleted_at      TIMESTAMPTZ,
+                created_at      TIMESTAMPTZ   NOT NULL DEFAULT now(),
+                modified_at     TIMESTAMPTZ,
+                PRIMARY KEY (id, trade_date)
+            ) PARTITION BY RANGE (trade_date);
+
+            -- 3. Indexes on the parent (Postgres propagates these to children)
+            CREATE INDEX idx_trades_status ON trades (status);
+            CREATE INDEX idx_trades_instrument_id ON trades (instrument_id);
+            CREATE INDEX idx_trades_counterparty_id ON trades (counterparty_id);
+
+            -- 4. Monthly child partitions, April - July 2026
+            CREATE TABLE trades_y2026m04 PARTITION OF trades
+                FOR VALUES FROM ('2026-04-01') TO ('2026-05-01');
+            CREATE TABLE trades_y2026m05 PARTITION OF trades
+                FOR VALUES FROM ('2026-05-01') TO ('2026-06-01');
+            CREATE TABLE trades_y2026m06 PARTITION OF trades
+                FOR VALUES FROM ('2026-06-01') TO ('2026-07-01');
+            CREATE TABLE trades_y2026m07 PARTITION OF trades
+                FOR VALUES FROM ('2026-07-01') TO ('2026-08-01');
+
+            -- 5. Default catch-all so out-of-window inserts never fail
+            CREATE TABLE trades_default PARTITION OF trades DEFAULT;
+
+            -- 6. Migrate existing data, then verify before dropping legacy
+            INSERT INTO trades SELECT * FROM trades_legacy;
+        ]]></sql>
+        <rollback>
+            <sql>DROP TABLE IF EXISTS trades;</sql>
+            <sql>ALTER TABLE trades_legacy RENAME TO trades;</sql>
+        </rollback>
+    </changeSet>
+
+</databaseChangeLog>
