@@ -23,7 +23,7 @@ class ReconciliationEngineTest {
         var in = List.<TradeType>of(equity("EQU-20260603-0001", "100.00","10"));
         var out= List.<TradeType>of(equity("EQU-20260603-0001", "100.00","10"));
 
-        List<ReconRsult> results = engine.reconcile(in,out, ReconciliationRule.EXACT);
+        List<ReconResult> results = engine.reconcile(in,out, ReconciliationRule.EXACT);
 
         assertThat(results).hasSize(1);
         assertThat(results.get(0).status()).isEqualTo(ReconResult.Status.MATCHED);
@@ -37,7 +37,7 @@ class ReconciliationEngineTest {
         var in = List.<TradeType>of(equity("EQU-20260603-0002", "100.00","10"));
         var out= List.<TradeType>of(equity("EQU-20260603-0002", "100.50","10"));
 
-        List<ReconRsult> results = engine.reconcile(in,out, ReconciliationRule.PRICE_TOLERANCE_1PCT);
+        List<ReconResult> results = engine.reconcile(in,out, ReconciliationRule.PRICE_TOLERANCE_1PCT);
 
         assertThat(results).hasSize(1);
         assertThat(results.get(0).status()).isEqualTo(ReconResult.Status.MATCHED);
@@ -61,7 +61,7 @@ class ReconciliationEngineTest {
     void testReconcile_emptyInternal_returnsEmpty() {
         // TODO(TICKET-ADV040): empty internal + empty external -> reconcile returns an empty list.
         List<ReconResult> results= engine.reconcile(List.of(), List.of(), ReconciliationRule.EXACT);
-        asserThat(results).isEmpty();
+        assertThat(results).isEmpty();
         org.junit.jupiter.api.Assertions.fail("TICKET-ADV040 not implemented yet");
     }
 
