@@ -84,9 +84,20 @@ public class TradeService {
 
     @Transactional
     public Trade update(Long id, TradeRequest request) {
-        // TODO(TICKET-ADV065): confirm exact update semantics once available.
         Trade trade = tradeRepository.findById(id)
             .orElseThrow(() -> new TradeNotFoundException(String.valueOf(id)));
+        Instrument instrument = instrumentRepository.findById(request.instrumentId())
+            .orElseThrow(() -> new IllegalArgumentException(
+                "No instrument with id " + request.instrumentId()));
+        Counterparty counterparty = counterpartyRepository.findById(request.counterpartyId())
+            .orElseThrow(() -> new IllegalArgumentException(
+                "No counterparty with id " + request.counterpartyId()));
+
+        trade.setTradeRef(request.tradeRef());
+        trade.setInstrument(instrument);
+        trade.setCounterparty(counterparty);
+        trade.setAssetClass(request.assetClass());
+        trade.setSide(request.side());
         trade.setQuantity(request.quantity());
         trade.setPrice(request.price());
         trade.setTradeDate(request.tradeDate());
@@ -95,7 +106,6 @@ public class TradeService {
 
     @Transactional
     public Trade updateStatus(Long id, String status) {
-        // TODO(TICKET-ADV066): confirm exact status-transition rules once available.
         Trade trade = tradeRepository.findById(id)
             .orElseThrow(() -> new TradeNotFoundException(String.valueOf(id)));
         trade.setStatus(status);
@@ -104,7 +114,6 @@ public class TradeService {
 
     @Transactional
     public void softDelete(Long id) {
-        // TODO(TICKET-ADV067): confirm exact soft-delete semantics once available.
         Trade trade = tradeRepository.findById(id)
             .orElseThrow(() -> new TradeNotFoundException(String.valueOf(id)));
         trade.softDelete();
