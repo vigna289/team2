@@ -1,0 +1,205 @@
+WARNING: A terminally deprecated method in sun.misc.Unsafe has been called
+WARNING: sun.misc.Unsafe::staticFieldBase has been called by com.google.inject.internal.aop.HiddenClassDefiner (file:/C:/Users/Admin/.m2/wrapper/dists/apache-maven-3.9.10/c420edeb14f9688d31a9d0c716a35be33c299d72b0941d215bce33cc6fa81815/lib/guice-5.1.0-classes.jar)
+WARNING: Please consider reporting this to the maintainers of class com.google.inject.internal.aop.HiddenClassDefiner
+WARNING: sun.misc.Unsafe::staticFieldBase will be removed in a future release
+[INFO] Scanning for projects...
+[INFO] 
+[INFO] --------------------< com.dbtraining.reconx:reconx >--------------------
+[INFO] Building reconx 1.0.0-SNAPSHOT
+[INFO]   from pom.xml
+[INFO] --------------------------------[ jar ]---------------------------------
+[INFO] 
+[INFO] >>> spring-boot:3.5.0:run (default-cli) > test-compile @ reconx >>>
+[INFO] 
+[INFO] --- jacoco:0.8.11:prepare-agent (prepare-agent) @ reconx ---
+[INFO] argLine set to -javaagent:C:\\Users\\Admin\\.m2\\repository\\org\\jacoco\\org.jacoco.agent\\0.8.11\\org.jacoco.agent-0.8.11-runtime.jar=destfile=C:\\Users\\Admin\\Documents\\team2\\db2026-reconX-main\\backend\\target\\jacoco.exec
+[INFO] 
+[INFO] --- resources:3.3.1:resources (default-resources) @ reconx ---
+[INFO] Copying 4 resources from src\main\resources to target\classes
+[INFO] Copying 13 resources from src\main\resources to target\classes
+[INFO] 
+[INFO] --- compiler:3.14.0:compile (default-compile) @ reconx ---
+[INFO] Nothing to compile - all classes are up to date.
+[INFO] 
+[INFO] --- resources:3.3.1:testResources (default-testResources) @ reconx ---
+[INFO] skip non existing resourceDirectory C:\Users\Admin\Documents\team2\db2026-reconX-main\backend\src\test\resources
+[INFO] 
+[INFO] --- compiler:3.14.0:testCompile (default-testCompile) @ reconx ---
+[INFO] Nothing to compile - all classes are up to date.
+[INFO] 
+[INFO] <<< spring-boot:3.5.0:run (default-cli) < test-compile @ reconx <<<
+[INFO] 
+[INFO] 
+[INFO] --- spring-boot:3.5.0:run (default-cli) @ reconx ---
+[INFO] Attaching agents: []
+
+  .   ____          _            __ _ _
+ /\\ / ___'_ __ _ _(_)_ __  __ _ \ \ \ \
+( ( )\___ | '_ | '_| | '_ \/ _` | \ \ \ \
+ \\/  ___)| |_)| | | | | || (_| |  ) ) ) )
+  '  |____| .__|_| |_|_| |_\__, | / / / /
+ =========|_|==============|___/=/_/_/_/
+
+ :: Spring Boot ::                (v3.5.0)
+
+03:17:59.619 [background-preinit] INFO    o.h.validator.internal.util.Version - HV000001: Hibernate Validator 8.0.2.Final
+03:17:59.671 [main] INFO    c.d.reconx.ReconxApplication - Starting ReconxApplication using Java 25.0.4 with PID 924 (C:\Users\Admin\Documents\team2\db2026-reconX-main\backend\target\classes started by Admin in C:\Users\Admin\Documents\team2\db2026-reconX-main\backend)
+03:17:59.672 [main] DEBUG   c.d.reconx.ReconxApplication - Running with Spring Boot v3.5.0, Spring v6.2.7
+03:17:59.673 [main] INFO    c.d.reconx.ReconxApplication - The following 1 profile is active: "dev"
+03:18:01.114 [main] INFO    o.s.d.r.c.RepositoryConfigurationDelegate - Bootstrapping Spring Data JPA repositories in DEFAULT mode.
+03:18:01.214 [main] INFO    o.s.d.r.c.RepositoryConfigurationDelegate - Finished Spring Data repository scanning in 88 ms. Found 6 JPA repository interfaces.
+03:18:02.123 [main] INFO    o.s.b.w.e.tomcat.TomcatWebServer - Tomcat initialized with port 8080 (http)
+03:18:02.139 [main] INFO    o.a.coyote.http11.Http11NioProtocol - Initializing ProtocolHandler ["http-nio-8080"]
+03:18:02.161 [main] INFO    o.a.catalina.core.StandardService - Starting service [Tomcat]
+03:18:02.162 [main] INFO    o.a.catalina.core.StandardEngine - Starting Servlet engine: [Apache Tomcat/10.1.41]
+03:18:02.279 [main] INFO    o.a.c.c.C.[.[localhost].[/api] - Initializing Spring embedded WebApplicationContext
+03:18:02.280 [main] INFO    o.s.b.w.s.c.ServletWebServerApplicationContext - Root WebApplicationContext: initialization completed in 2543 ms
+03:18:02.525 [main] DEBUG   c.d.r.s.JwtAuthenticationFilter - Filter 'jwtAuthenticationFilter' configured for use
+03:18:02.651 [main] INFO    com.zaxxer.hikari.HikariDataSource - HikariPool-1 - Starting...
+03:18:02.905 [main] INFO    com.zaxxer.hikari.pool.HikariPool - HikariPool-1 - Added connection conn0: url=jdbc:h2:mem:reconx user=SA
+03:18:02.907 [main] INFO    com.zaxxer.hikari.HikariDataSource - HikariPool-1 - Start completed.
+03:18:02.991 [main] INFO    liquibase.database - Set default schema name to public
+03:18:03.484 [main] INFO    liquibase.changelog - Creating database history table with name: public.DATABASECHANGELOG
+03:18:03.598 [main] INFO    liquibase.changelog - Reading from public.DATABASECHANGELOG
+03:18:03.746 [main] INFO    liquibase.snapshot - Creating snapshot
+03:18:03.889 [main] INFO    liquibase.lockservice - Successfully acquired change log lock
+03:18:03.890 [main] INFO    liquibase.command - Using deploymentId: 5320282628
+03:18:03.892 [main] INFO    liquibase.changelog - Reading from public.DATABASECHANGELOG
+03:18:03.946 [main] INFO    liquibase.ui - Running Changeset: db/changelog/changes/001-init.xml::001-init-tag::trainer
+03:18:03.949 [main] INFO    liquibase.changelog - Tag 'v1.0.0-init' applied to database
+03:18:03.949 [main] INFO    liquibase.changelog - ChangeSet db/changelog/changes/001-init.xml::001-init-tag::trainer ran successfully in 2ms
+03:18:03.956 [main] INFO    liquibase.ui - Running Changeset: db/changelog/changes/002-schema.xml::002-create-counterparties::trainer
+03:18:03.957 [main] INFO    liquibase.snapshot - Creating snapshot
+03:18:03.968 [main] INFO    liquibase.changelog - Table counterparties created
+03:18:03.968 [main] INFO    liquibase.changelog - ChangeSet db/changelog/changes/002-schema.xml::002-create-counterparties::trainer ran successfully in 12ms
+03:18:03.971 [main] INFO    liquibase.ui - Running Changeset: db/changelog/changes/002-schema.xml::002-create-instruments::trainer
+03:18:03.972 [main] INFO    liquibase.snapshot - Creating snapshot
+03:18:03.976 [main] INFO    liquibase.changelog - Table instruments created
+03:18:03.977 [main] INFO    liquibase.changelog - ChangeSet db/changelog/changes/002-schema.xml::002-create-instruments::trainer ran successfully in 6ms
+03:18:03.981 [main] INFO    liquibase.ui - Running Changeset: db/changelog/changes/002-schema.xml::002-create-trades::trainer
+03:18:03.982 [main] INFO    liquibase.snapshot - Creating snapshot
+03:18:03.988 [main] INFO    liquibase.changelog - Table trades created
+03:18:03.994 [main] INFO    liquibase.changelog - Foreign key constraint added to trades (instrument_id)
+03:18:03.996 [main] INFO    liquibase.changelog - Foreign key constraint added to trades (counterparty_id)
+03:18:03.998 [main] INFO    liquibase.changelog - Index idx_trades_trade_date created
+03:18:04.000 [main] INFO    liquibase.changelog - Index idx_trades_status created
+03:18:04.000 [main] INFO    liquibase.changelog - ChangeSet db/changelog/changes/002-schema.xml::002-create-trades::trainer ran successfully in 19ms
+03:18:04.003 [main] INFO    liquibase.ui - Running Changeset: db/changelog/changes/002-schema.xml::002-create-settlements::trainer
+03:18:04.004 [main] INFO    liquibase.snapshot - Creating snapshot
+03:18:04.008 [main] INFO    liquibase.changelog - Table settlements created
+03:18:04.010 [main] INFO    liquibase.changelog - Foreign key constraint added to settlements (trade_id)
+03:18:04.011 [main] INFO    liquibase.changelog - ChangeSet db/changelog/changes/002-schema.xml::002-create-settlements::trainer ran successfully in 8ms
+03:18:04.013 [main] INFO    liquibase.ui - Running Changeset: db/changelog/changes/003-jsonb.xml::003-jsonb-on-instruments::trainer
+03:18:04.014 [main] INFO    liquibase.changelog - Marking ChangeSet: "db/changelog/changes/003-jsonb.xml::003-jsonb-on-instruments::trainer" as ran despite precondition failure due to onFail='MARK_RAN': 
+          db/changelog/db.changelog-master.xml : DBMS Precondition failed: expected postgresql, got h2
+
+03:18:04.017 [main] INFO    liquibase.ui - Running Changeset: db/changelog/changes/004-partitioning.xml::004-partitioning::trainer
+03:18:04.017 [main] INFO    liquibase.changelog - Marking ChangeSet: "db/changelog/changes/004-partitioning.xml::004-partitioning::trainer" as ran despite precondition failure due to onFail='MARK_RAN': 
+          db/changelog/db.changelog-master.xml : DBMS Precondition failed: expected postgresql, got h2
+
+03:18:04.019 [main] INFO    liquibase.ui - Running Changeset: db/changelog/changes/005-mat-views.xml::005-mv-daily-recon-summary::trainer
+03:18:04.019 [main] INFO    liquibase.changelog - Marking ChangeSet: "db/changelog/changes/005-mat-views.xml::005-mv-daily-recon-summary::trainer" as ran despite precondition failure due to onFail='MARK_RAN': 
+          db/changelog/db.changelog-master.xml : DBMS Precondition failed: expected postgresql, got h2
+
+03:18:04.023 [main] INFO    liquibase.ui - Running Changeset: db/changelog/changes/006-audit-and-recon.xml::006-create-audit-log::trainer
+03:18:04.023 [main] INFO    liquibase.snapshot - Creating snapshot
+03:18:04.030 [main] INFO    liquibase.changelog - Table audit_log created
+03:18:04.031 [main] INFO    liquibase.changelog - Index idx_audit_log_trade_ref created
+03:18:04.031 [main] INFO    liquibase.changelog - ChangeSet db/changelog/changes/006-audit-and-recon.xml::006-create-audit-log::trainer ran successfully in 8ms
+03:18:04.034 [main] INFO    liquibase.ui - Running Changeset: db/changelog/changes/006-audit-and-recon.xml::006-create-recon-breaks::trainer
+03:18:04.034 [main] INFO    liquibase.snapshot - Creating snapshot
+03:18:04.039 [main] INFO    liquibase.changelog - Table recon_breaks created
+03:18:04.042 [main] INFO    liquibase.changelog - Foreign key constraint added to recon_breaks (trade_id)
+03:18:04.042 [main] INFO    liquibase.changelog - ChangeSet db/changelog/changes/006-audit-and-recon.xml::006-create-recon-breaks::trainer ran successfully in 8ms
+03:18:04.050 [main] INFO    liquibase.ui - Running Changeset: db/changelog/changes/006-audit-and-recon.xml::006-create-recon-jobs::trainer
+03:18:04.051 [main] INFO    liquibase.snapshot - Creating snapshot
+03:18:04.056 [main] INFO    liquibase.changelog - Table recon_jobs created
+03:18:04.057 [main] INFO    liquibase.changelog - ChangeSet db/changelog/changes/006-audit-and-recon.xml::006-create-recon-jobs::trainer ran successfully in 7ms
+03:18:04.059 [main] INFO    liquibase.ui - Running Changeset: db/changelog/changes/007-users-rbac.xml::007-create-users::trainer
+03:18:04.060 [main] INFO    liquibase.snapshot - Creating snapshot
+03:18:04.065 [main] INFO    liquibase.changelog - Table users created
+03:18:04.065 [main] INFO    liquibase.changelog - ChangeSet db/changelog/changes/007-users-rbac.xml::007-create-users::trainer ran successfully in 6ms
+03:18:04.069 [main] INFO    liquibase.ui - Running Changeset: db/changelog/changes/008-seed.xml::008-seed-counterparties::trainer
+03:18:04.081 [main] WARN    liquibase.change - Could not snapshot table 'public.COUNTERPARTIES' to get the missing column type information. It is strongly recommended that you augment your loadData operation with a full list of targeted columns and their load data types.
+03:18:04.085 [main] WARN    liquibase.change - Could not snapshot table 'public.COUNTERPARTIES' to get the missing column type information. It is strongly recommended that you augment your loadData operation with a full list of targeted columns and their load data types.
+03:18:04.089 [main] INFO    liquibase.statement - Executing JDBC DML batch was successful. 10 operations were executed, 1 individual UPDATE events were confirmed by the database.
+03:18:04.090 [main] INFO    liquibase.changelog - Data loaded from 'data/counterparties.csv' into table 'counterparties'
+03:18:04.090 [main] INFO    liquibase.changelog - ChangeSet db/changelog/changes/008-seed.xml::008-seed-counterparties::trainer ran successfully in 21ms
+03:18:04.093 [main] INFO    liquibase.ui - Running Changeset: db/changelog/changes/008-seed.xml::008-seed-instruments::trainer
+03:18:04.095 [main] WARN    liquibase.change - Could not snapshot table 'public.INSTRUMENTS' to get the missing column type information. It is strongly recommended that you augment your loadData operation with a full list of targeted columns and their load data types.
+03:18:04.098 [main] WARN    liquibase.change - Could not snapshot table 'public.INSTRUMENTS' to get the missing column type information. It is strongly recommended that you augment your loadData operation with a full list of targeted columns and their load data types.
+03:18:04.100 [main] INFO    liquibase.statement - Using java.sql.Types.NULL to set null value for type STRING
+03:18:04.100 [main] INFO    liquibase.statement - Using java.sql.Types.NULL to set null value for type STRING
+03:18:04.100 [main] INFO    liquibase.statement - Using java.sql.Types.NULL to set null value for type STRING
+03:18:04.103 [main] INFO    liquibase.statement - Executing JDBC DML batch was successful. 15 operations were executed, 1 individual UPDATE events were confirmed by the database.
+03:18:04.103 [main] INFO    liquibase.changelog - Data loaded from 'data/instruments.csv' into table 'instruments'
+03:18:04.103 [main] INFO    liquibase.changelog - ChangeSet db/changelog/changes/008-seed.xml::008-seed-instruments::trainer ran successfully in 10ms
+03:18:04.107 [main] INFO    liquibase.ui - Running Changeset: db/changelog/changes/008-seed.xml::008-seed-users::trainer
+03:18:04.109 [main] INFO    liquibase.changelog - New row inserted into users
+03:18:04.110 [main] INFO    liquibase.changelog - New row inserted into users
+03:18:04.111 [main] INFO    liquibase.changelog - New row inserted into users
+03:18:04.112 [main] INFO    liquibase.changelog - New row inserted into users
+03:18:04.112 [main] INFO    liquibase.changelog - ChangeSet db/changelog/changes/008-seed.xml::008-seed-users::trainer ran successfully in 5ms
+03:18:04.120 [main] INFO    liquibase.util - UPDATE SUMMARY
+03:18:04.120 [main] INFO    liquibase.util - Run:                         15
+03:18:04.120 [main] INFO    liquibase.util - Previously run:               0
+03:18:04.120 [main] INFO    liquibase.util - Filtered out:                 0
+03:18:04.120 [main] INFO    liquibase.util - -------------------------------
+03:18:04.120 [main] INFO    liquibase.util - Total change sets:           15
+03:18:04.121 [main] INFO    liquibase.util - Update summary generated
+03:18:04.124 [main] INFO    liquibase.command - Update command completed successfully.
+03:18:04.124 [main] INFO    liquibase.ui - Liquibase: Update has been successful. Rows affected: 19
+03:18:04.126 [main] INFO    liquibase.lockservice - Successfully released change log lock
+03:18:04.127 [main] INFO    liquibase.command - Command execution complete
+03:18:04.751 [main] INFO    o.h.jpa.internal.util.LogHelper - HHH000204: Processing PersistenceUnitInfo [name: default]
+03:18:04.818 [main] INFO    org.hibernate.Version - HHH000412: Hibernate ORM core version 6.6.15.Final
+03:18:04.859 [main] INFO    o.h.c.i.RegionFactoryInitiator - HHH000026: Second-level cache disabled
+03:18:04.986 [main] INFO    o.h.e.b.internal.EnversServiceImpl - Envers integration enabled? : true
+03:18:05.046 [main] WARN    org.hibernate.orm.deprecation - HHH90000025: H2Dialect does not need to be specified explicitly using 'hibernate.dialect' (remove the property setting and it will be selected by default)
+03:18:05.062 [main] INFO    o.hibernate.orm.connections.pooling - HHH10001005: Database info:
+	Database JDBC URL [Connecting through datasource 'HikariDataSource (HikariPool-1)']
+	Database driver: undefined/unknown
+	Database version: 2.3.232
+	Autocommit mode: undefined/unknown
+	Isolation level: undefined/unknown
+	Minimum pool size: undefined/unknown
+	Maximum pool size: undefined/unknown
+03:18:05.309 [main] INFO    o.s.o.j.p.SpringPersistenceUnitInfo - No LoadTimeWeaver setup: ignoring JPA class transformer
+03:18:06.487 [main] INFO    o.h.e.t.j.p.i.JtaPlatformInitiator - HHH000489: No JTA platform available (set 'hibernate.transaction.jta.platform' to enable JTA platform integration)
+03:18:06.524 [main] INFO    o.s.o.j.LocalContainerEntityManagerFactoryBean - Initialized JPA EntityManagerFactory for persistence unit 'default'
+03:18:06.965 [main] WARN    o.s.b.w.s.c.AnnotationConfigServletWebServerApplicationContext - Exception encountered during context initialization - cancelling refresh attempt: org.springframework.beans.factory.UnsatisfiedDependencyException: Error creating bean with name 'authController' defined in file [C:\Users\Admin\Documents\team2\db2026-reconX-main\backend\target\classes\com\dbtraining\reconx\controller\AuthController.class]: Unsatisfied dependency expressed through constructor parameter 1: No qualifying bean of type 'org.springframework.security.crypto.password.PasswordEncoder' available: expected at least 1 bean which qualifies as autowire candidate. Dependency annotations: {}
+03:18:06.966 [main] INFO    o.s.o.j.LocalContainerEntityManagerFactoryBean - Closing JPA EntityManagerFactory for persistence unit 'default'
+03:18:06.968 [main] INFO    com.zaxxer.hikari.HikariDataSource - HikariPool-1 - Shutdown initiated...
+03:18:06.971 [main] INFO    com.zaxxer.hikari.HikariDataSource - HikariPool-1 - Shutdown completed.
+03:18:06.973 [main] INFO    o.a.catalina.core.StandardService - Stopping service [Tomcat]
+03:18:06.993 [main] INFO    o.s.b.a.l.ConditionEvaluationReportLogger - 
+
+Error starting ApplicationContext. To display the condition evaluation report re-run your application with 'debug' enabled.
+03:18:07.023 [main] ERROR   o.s.b.d.LoggingFailureAnalysisReporter - 
+
+***************************
+APPLICATION FAILED TO START
+***************************
+
+Description:
+
+Parameter 1 of constructor in com.dbtraining.reconx.controller.AuthController required a bean of type 'org.springframework.security.crypto.password.PasswordEncoder' that could not be found.
+
+
+Action:
+
+Consider defining a bean of type 'org.springframework.security.crypto.password.PasswordEncoder' in your configuration.
+
+[INFO] ------------------------------------------------------------------------
+[INFO] BUILD FAILURE
+[INFO] ------------------------------------------------------------------------
+[INFO] Total time:  12.017 s
+[INFO] Finished at: 2026-07-29T03:18:07-07:00
+[INFO] ------------------------------------------------------------------------
+[ERROR] Failed to execute goal org.springframework.boot:spring-boot-maven-plugin:3.5.0:run (default-cli) on project reconx: Process terminated with exit code: 1 -> [Help 1]
+[ERROR] 
+[ERROR] To see the full stack trace of the errors, re-run Maven with the -e switch.
+[ERROR] Re-run Maven using the -X switch to enable full debug logging.
+[ERROR] 
+[ERROR] For more information about the errors and possible solutions, please read the following articles:
+[ERROR] [Help 1] http://cwiki.apache.org/confluence/display/MAVEN/MojoExecutionException

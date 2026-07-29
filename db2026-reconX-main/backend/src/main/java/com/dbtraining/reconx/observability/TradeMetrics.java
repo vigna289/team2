@@ -15,8 +15,9 @@ import org.springframework.stereotype.Component;
  *
  * WHAT:    Holds Micrometer instruments published to /actuator/prometheus.
  * HOW:     Counters / Distribution Summaries are constructed once in the
- *          constructor and stored as final fields. Gauges are "polled" —
- *          Micrometer holds a weak reference and calls the lambda on scrape.
+ *          constructor and stored as final fields. The Gauge is "polled" —
+ *          Micrometer holds a weak reference and calls the lambda on scrape,
+ *          so breakRepo must stay alive via this component's strong reference.
  * WHY:     Three different metric shapes matter:
  *            - Counter: monotonic count of events (created trades)
  *            - DistributionSummary: histogram of magnitudes (trade values)
@@ -24,15 +25,6 @@ import org.springframework.stereotype.Component;
  *
  * The TIMER for reconciliation duration lives as @Timed on
  * ReconciliationEngine.reconcile() (TICKET-ADV084) — not in this class.
- * ============================================================================
- *
- *  TODO(TICKET-ADV083 + ADV086):
- *    public void incrementTradeCreated() { tradeCreated.increment(); }
- *    public void recordTradeValue(double value) { tradeValue.record(value); }
- *
- *  HINT: A polled Gauge MUST hold a strong reference to its source object,
- *        otherwise it disappears on GC. Here breakRepo is captured by the
- *        Gauge.builder so the lifetime is tied to the registry.
  * ============================================================================
  */
 @Component
@@ -58,11 +50,13 @@ public class TradeMetrics {
                 .register(registry);
     }
 
+    /** TICKET-ADV083 */
     public void incrementTradeCreated() {
-        // TODO(TICKET-ADV083): increment the tradeCreated counter.
+        tradeCreated.increment();
     }
 
+    /** TICKET-ADV086 */
     public void recordTradeValue(double value) {
-        // TODO(TICKET-ADV086): record the value on the tradeValue distribution summary.
+        tradeValue.record(value);
     }
 }

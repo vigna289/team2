@@ -39,6 +39,7 @@ com\dbtraining\reconx\controller\ReconController.class
 com\dbtraining\reconx\repository\entity\AuditLogEntry.class
 com\dbtraining\reconx\dto\ReconResult.class
 com\dbtraining\reconx\repository\TradeSpecifications.class
+com\dbtraining\reconx\config\CacheConfig.class
 com\dbtraining\reconx\exception\ReconciliationMismatchException.class
 com\dbtraining\reconx\model\DerivativeTrade$Builder.class
 com\dbtraining\reconx\model\FXTrade$Builder.class
