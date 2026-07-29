@@ -19,7 +19,7 @@
                             http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-4.27.xsd">
 
     <changeSet id="007-create-users" author="trainer" labels="core-schema,rbac">
-        <description>Create users table for RBAC with 4 roles (ADMIN, TRADER, VIEWER, RECON_ANALYST)</description>
+        <comment>Create users table for RBAC with 4 roles (ADMIN, TRADER, VIEWER, RECON_ANALYST)</comment>
         <preConditions onFail="MARK_RAN">
             <not>
                 <tableExists tableName="users"/>

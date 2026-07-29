@@ -22,7 +22,7 @@
                             http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-4.27.xsd">
 
     <changeSet id="006-create-audit-log" author="trainer" labels="core-schema,audit">
-        <description>Create audit_log table for event-sourced trade change history</description>
+        <comment>Create audit_log table for event-sourced trade change history</comment>
         <preConditions onFail="MARK_RAN">
             <not>
                 <tableExists tableName="audit_log"/>
@@ -49,7 +49,7 @@
     </changeSet>
 
     <changeSet id="006-create-recon-breaks" author="trainer" labels="core-schema,recon">
-        <description>Create recon_breaks table for tracking trade discrepancies</description>
+        <comment>Create recon_breaks table for tracking trade discrepancies</comment>
         <preConditions onFail="MARK_RAN">
             <not>
                 <tableExists tableName="recon_breaks"/>
@@ -75,7 +75,7 @@
     </changeSet>
 
     <changeSet id="006-create-recon-jobs" author="trainer" labels="core-schema,recon">
-        <description>Create recon_jobs table for async reconciliation job tracking</description>
+        <comment>Create recon_jobs table for async reconciliation job tracking</comment>
         <preConditions onFail="MARK_RAN">
             <not>
                 <tableExists tableName="recon_jobs"/>
