@@ -12,6 +12,8 @@ import com.dbtraining.reconx.repository.entity.Instrument;
 import com.dbtraining.reconx.repository.entity.Trade;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import com.dbtraining.reconx.kafka.TradeEventProducer;
+import com.dbtraining.reconx.observability.TradeMetrics;
 import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -21,7 +23,7 @@ import java.time.LocalDate;
 /**
  * NOTE: list(...) is the ADV056/057 deliverable — it composes the three
  * TradeSpecifications with Specification.where(...).and(...).and(...) and
- * calls tradeRepository.findAll(spec, pageable).
+ * calls TradeRepository.findAll(spec, pageable).
  *
  * create/update/updateStatus/softDelete are placeholders for the Day 5
  * REST tickets (ADV064-ADV067) — status is a plain String on the real
@@ -34,32 +36,35 @@ import java.time.LocalDate;
 public class TradeService {
 
     private final TradeRepository tradeRepository;
-    private final InstrumentRepository instrumentRepository;
-    private final CounterpartyRepository counterpartyRepository;
+private final InstrumentRepository instrumentRepository;
+private final CounterpartyRepository counterpartyRepository;
+private final TradeEventProducer events;
+private final TradeMetrics metrics;
 
-    public TradeService(TradeRepository tradeRepo,
+    public TradeService(TradeRepository tradeRepository,
                         CounterpartyRepository cpRepo,
-                        InstrumentRepository instRepo,
+                        InstrumentRepository instrumentRepository,
                         TradeEventProducer events,
                         TradeMetrics metrics) {
-        this.tradeRepo = tradeRepo;
-        this.cpRepo = cpRepo;
-        this.instRepo = instRepo;
-        this.events = events;
-        this.metrics = metrics;
+                           
+        this.tradeRepository = tradeRepository;
+this.instrumentRepository = instrumentRepository;
+this.counterpartyRepository = cpRepo;
+this.events = events;
+this.metrics = metrics;
     }
 
     public Trade create(TradeRequest req, String actor) {
 
-    if (tradeRepo.findByTradeRef(req.tradeRef()).isPresent()) {
+    if (tradeRepository.findByTradeRef(req.tradeRef()).isPresent()) {
         throw new DuplicateTradeRefException(req.tradeRef());
     }
 
-   var instrument = instRepo.findById(req.instrumentId())
+   var instrument = instrumentRepository.findById(req.instrumentId())
         .orElseThrow(() -> new TradeNotFoundException(
                 "Instrument id: " + req.instrumentId()
         ));
-    var counterparty = cpRepo.findById(req.counterpartyId())
+    var counterparty = counterpartyRepository.findById(req.counterpartyId())
         .orElseThrow(() -> new TradeNotFoundException(
                 "Counterparty id: " + req.counterpartyId()
         ));
@@ -76,12 +81,12 @@ public class TradeService {
     trade.setTradeDate(req.tradeDate());
     trade.setStatus("PENDING");
 
-    return tradeRepo.save(trade);
+    return tradeRepository.save(trade);
 }
 
     public Trade update(Long id, TradeRequest req, String actor) {
 
-    Trade trade = tradeRepo.findById(id)
+    Trade trade = tradeRepository.findById(id)
         .orElseThrow(() -> new TradeNotFoundException(
                 "Trade id: " + id
         ));
@@ -94,20 +99,20 @@ public class TradeService {
     trade.setAssetClass(req.assetClass());
 
     trade.setCounterparty(
-            cpRepo.findById(req.counterpartyId())
+            counterpartyRepository.findById(req.counterpartyId())
         .orElseThrow(() -> new TradeNotFoundException(
                 "Counterparty id: " + req.counterpartyId()
         ))
     );
 
     trade.setInstrument(
-            instRepo.findById(req.instrumentId())
+            instrumentRepository.findById(req.instrumentId())
         .orElseThrow(() -> new TradeNotFoundException(
                 "Instrument id: " + req.instrumentId()
         ))
     );
 
-    return tradeRepo.save(trade);
+    return tradeRepository.save(trade);
 }
 
     public Trade updateStatus(Long id, String status, String actor) {
@@ -132,17 +137,17 @@ public Page<Trade> list(LocalDate from,
     Specification<Trade> spec = Specification.where(null);
 
     if (from != null && to != null) {
-        spec = spec.and(tradeDateBetween(from, to));
-    }
+    spec = spec.and(TradeSpecifications.tradeDateBetween(from, to));
+}
 
-    if (status != null) {
-        spec = spec.and(hasStatus(status));
-    }
+if (status != null) {
+    spec = spec.and(TradeSpecifications.hasStatus(status));
+}
 
-    if (counterpartyId != null) {
-        spec = spec.and(hasCounterparty(counterpartyId));
-    }
+if (counterpartyId != null) {
+    spec = spec.and(TradeSpecifications.hasCounterparty(counterpartyId));
+}
 
-    return tradeRepo.findAll(spec, pageable);
+    return tradeRepository.findAll(spec, pageable);
 }
 }
