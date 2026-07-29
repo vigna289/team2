@@ -20,12 +20,12 @@
 
     <!-- ADV006 — counterparties -->
     <changeSet id="002-create-counterparties" author="trainer" labels="core-schema">
-        <comment>Create counterparties table with LEI code unique constraint</comment>
         <preConditions onFail="MARK_RAN">
             <not>
                 <tableExists tableName="counterparties"/>
             </not>
         </preConditions>
+        <comment>Create counterparties table with LEI code unique constraint</comment>
         <createTable tableName="counterparties">
             <column name="id" type="BIGINT" autoIncrement="true">
                 <constraints primaryKey="true"/>
@@ -42,12 +42,12 @@
 
     <!-- ADV006 — instruments -->
     <changeSet id="002-create-instruments" author="trainer" labels="core-schema">
-        <comment>Create instruments table with symbol and ISIN uniqueness</comment>
         <preConditions onFail="MARK_RAN">
             <not>
                 <tableExists tableName="instruments"/>
             </not>
         </preConditions>
+        <comment>Create instruments table with symbol and ISIN uniqueness</comment>
         <createTable tableName="instruments">
             <column name="id" type="BIGINT" autoIncrement="true">
                 <constraints primaryKey="true"/>
@@ -65,12 +65,12 @@
 
     <!-- ADV006 — trades (non-partitioned base; 004 attaches partitions on Postgres) -->
     <changeSet id="002-create-trades" author="trainer" labels="core-schema">
-        <comment>Create trades table with FK to instruments and counterparties</comment>
         <preConditions onFail="MARK_RAN">
             <not>
                 <tableExists tableName="trades"/>
             </not>
         </preConditions>
+        <comment>Create trades table with FK to instruments and counterparties</comment>
         <createTable tableName="trades">
             <column name="id" type="BIGINT" autoIncrement="true">
                 <constraints primaryKey="true"/>
@@ -107,12 +107,12 @@
 
     <!-- ADV006 — settlements -->
     <changeSet id="002-create-settlements" author="trainer" labels="core-schema">
-        <comment>Create settlements table for trade settlement tracking</comment>
         <preConditions onFail="MARK_RAN">
             <not>
                 <tableExists tableName="settlements"/>
             </not>
         </preConditions>
+        <comment>Create settlements table for trade settlement tracking</comment>
         <createTable tableName="settlements">
             <column name="id" type="BIGINT" autoIncrement="true">
                 <constraints primaryKey="true"/>
@@ -131,3 +131,4 @@
     </changeSet>
 
 </databaseChangeLog>
+

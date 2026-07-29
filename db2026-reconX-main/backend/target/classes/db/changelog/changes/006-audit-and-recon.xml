@@ -22,12 +22,12 @@
                             http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-4.27.xsd">
 
     <changeSet id="006-create-audit-log" author="trainer" labels="core-schema,audit">
-        <comment>Create audit_log table for event-sourced trade change history</comment>
         <preConditions onFail="MARK_RAN">
             <not>
                 <tableExists tableName="audit_log"/>
             </not>
         </preConditions>
+        <comment>Create audit_log table for event-sourced trade change history</comment>
         <createTable tableName="audit_log">
             <column name="id" type="BIGINT" autoIncrement="true">
                 <constraints primaryKey="true"/>
@@ -37,8 +37,8 @@
             <column name="event_type" type="VARCHAR(30)"><constraints nullable="false"/></column>
             <column name="event_timestamp" type="TIMESTAMP"><constraints nullable="false"/></column>
             <column name="actor" type="VARCHAR(100)"/>
-            <column name="before_state" type="CLOB"/>
-            <column name="after_state" type="CLOB"/>
+            <column name="before_state" type="VARCHAR"/>
+            <column name="after_state" type="VARCHAR"/>
         </createTable>
         <createIndex tableName="audit_log" indexName="idx_audit_log_trade_ref">
             <column name="trade_ref"/>
@@ -49,12 +49,12 @@
     </changeSet>
 
     <changeSet id="006-create-recon-breaks" author="trainer" labels="core-schema,recon">
-        <comment>Create recon_breaks table for tracking trade discrepancies</comment>
         <preConditions onFail="MARK_RAN">
             <not>
                 <tableExists tableName="recon_breaks"/>
             </not>
         </preConditions>
+        <comment>Create recon_breaks table for tracking trade discrepancies</comment>
         <createTable tableName="recon_breaks">
             <column name="id" type="BIGINT" autoIncrement="true">
                 <constraints primaryKey="true"/>
@@ -75,12 +75,12 @@
     </changeSet>
 
     <changeSet id="006-create-recon-jobs" author="trainer" labels="core-schema,recon">
-        <comment>Create recon_jobs table for async reconciliation job tracking</comment>
         <preConditions onFail="MARK_RAN">
             <not>
                 <tableExists tableName="recon_jobs"/>
             </not>
         </preConditions>
+        <comment>Create recon_jobs table for async reconciliation job tracking</comment>
         <createTable tableName="recon_jobs">
             <column name="id" type="BIGINT" autoIncrement="true">
                 <constraints primaryKey="true"/>
@@ -100,3 +100,6 @@
     </changeSet>
 
 </databaseChangeLog>
+
+
+

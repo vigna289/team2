@@ -20,10 +20,10 @@
                             http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-4.27.xsd">
 
     <changeSet id="005-mv-daily-recon-summary" author="trainer" labels="postgres-only,analytics">
-        <comment>Create materialized view for daily recon summary aggregates</comment>
         <preConditions onFail="MARK_RAN">
             <dbms type="postgresql"/>
         </preConditions>
+        <comment>Create materialized view for daily recon summary aggregates</comment>
         <sql splitStatements="false"><![CDATA[
             CREATE MATERIALIZED VIEW mv_daily_recon_summary AS
             SELECT
@@ -48,3 +48,4 @@
     </changeSet>
 
 </databaseChangeLog>
+
