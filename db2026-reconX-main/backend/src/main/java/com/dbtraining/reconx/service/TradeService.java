@@ -37,76 +37,112 @@ public class TradeService {
     private final InstrumentRepository instrumentRepository;
     private final CounterpartyRepository counterpartyRepository;
 
-    public TradeService(TradeRepository tradeRepository,
-                         InstrumentRepository instrumentRepository,
-                         CounterpartyRepository counterpartyRepository) {
-        this.tradeRepository = tradeRepository;
-        this.instrumentRepository = instrumentRepository;
-        this.counterpartyRepository = counterpartyRepository;
+    public TradeService(TradeRepository tradeRepo,
+                        CounterpartyRepository cpRepo,
+                        InstrumentRepository instRepo,
+                        TradeEventProducer events,
+                        TradeMetrics metrics) {
+        this.tradeRepo = tradeRepo;
+        this.cpRepo = cpRepo;
+        this.instRepo = instRepo;
+        this.events = events;
+        this.metrics = metrics;
+    }
+
+    public Trade create(TradeRequest req, String actor) {
+
+    if (tradeRepo.findByTradeRef(req.tradeRef()).isPresent()) {
+        throw new DuplicateTradeRefException(req.tradeRef());
+    }
+
+   var instrument = instRepo.findById(req.instrumentId())
+        .orElseThrow(() -> new TradeNotFoundException(
+                "Instrument id: " + req.instrumentId()
+        ));
+    var counterparty = cpRepo.findById(req.counterpartyId())
+        .orElseThrow(() -> new TradeNotFoundException(
+                "Counterparty id: " + req.counterpartyId()
+        ));
+
+    Trade trade = new Trade();
+
+    trade.setTradeRef(req.tradeRef());
+    trade.setInstrument(instrument);
+    trade.setCounterparty(counterparty);
+    trade.setAssetClass(req.assetClass());
+    trade.setSide(req.side());
+    trade.setQuantity(req.quantity());
+    trade.setPrice(req.price());
+    trade.setTradeDate(req.tradeDate());
+    trade.setStatus("PENDING");
+
+    return tradeRepo.save(trade);
+}
+
+    public Trade update(Long id, TradeRequest req, String actor) {
+
+    Trade trade = tradeRepo.findById(id)
+        .orElseThrow(() -> new TradeNotFoundException(
+                "Trade id: " + id
+        ));
+
+    trade.setTradeRef(req.tradeRef());
+    trade.setQuantity(req.quantity());
+    trade.setPrice(req.price());
+    trade.setTradeDate(req.tradeDate());
+    trade.setSide(req.side());
+    trade.setAssetClass(req.assetClass());
+
+    trade.setCounterparty(
+            cpRepo.findById(req.counterpartyId())
+        .orElseThrow(() -> new TradeNotFoundException(
+                "Counterparty id: " + req.counterpartyId()
+        ))
+    );
+
+    trade.setInstrument(
+            instRepo.findById(req.instrumentId())
+        .orElseThrow(() -> new TradeNotFoundException(
+                "Instrument id: " + req.instrumentId()
+        ))
+    );
+
+    return tradeRepo.save(trade);
+}
+
+    public Trade updateStatus(Long id, String status, String actor) {
+        // TODO(TICKET-ADV066): load, setStatus(status), save, publish TRADE_UPDATED
+        //   with the new status in the "after" slot of the event.
+        throw new UnsupportedOperationException("TICKET-ADV066");
+    }
+
+    public void softDelete(Long id, String actor) {
+        // TODO(TICKET-ADV067): load, call t.softDelete() (sets deleted_at), save,
+        //   publish a TRADE_CANCELLED event.
+        throw new UnsupportedOperationException("TICKET-ADV067");
     }
 
     @Transactional(readOnly = true)
-    public Page<Trade> list(LocalDate from, LocalDate to, String status,
-                             Long counterpartyId, Pageable pageable) {
-        Specification<Trade> spec = Specification
-            .where(TradeSpecifications.tradeDateBetween(from, to))
-            .and(TradeSpecifications.hasStatus(status))
-            .and(TradeSpecifications.hasCounterparty(counterpartyId));
-        return tradeRepository.findAll(spec, pageable);
+public Page<Trade> list(LocalDate from,
+                        LocalDate to,
+                        String status,
+                        Long counterpartyId,
+                        Pageable pageable) {
+
+    Specification<Trade> spec = Specification.where(null);
+
+    if (from != null && to != null) {
+        spec = spec.and(tradeDateBetween(from, to));
     }
 
-    @Transactional
-    public Trade create(TradeRequest request) {
-        // TODO(TICKET-ADV064): confirm exact duplicate-check + event-publish
-        // behaviour once the ADV064 ticket text is available.
-        tradeRepository.findByTradeRef(request.tradeRef()).ifPresent(existing -> {
-            throw new DuplicateTradeRefException(request.tradeRef());
-        });
-
-        Instrument instrument = instrumentRepository.findById(request.instrumentId())
-            .orElseThrow(() -> new IllegalArgumentException(
-                "No instrument with id " + request.instrumentId()));
-        Counterparty counterparty = counterpartyRepository.findById(request.counterpartyId())
-            .orElseThrow(() -> new IllegalArgumentException(
-                "No counterparty with id " + request.counterpartyId()));
-
-        Trade trade = new Trade();
-        trade.setTradeRef(request.tradeRef());
-        trade.setInstrument(instrument);
-        trade.setCounterparty(counterparty);
-        trade.setAssetClass(request.assetClass());
-        trade.setSide(request.side());
-        trade.setQuantity(request.quantity());
-        trade.setPrice(request.price());
-        trade.setTradeDate(request.tradeDate());
-        return tradeRepository.save(trade);
+    if (status != null) {
+        spec = spec.and(hasStatus(status));
     }
 
-    @Transactional
-    public Trade update(Long id, TradeRequest request) {
-        // TODO(TICKET-ADV065): confirm exact update semantics once available.
-        Trade trade = tradeRepository.findById(id)
-            .orElseThrow(() -> new TradeNotFoundException(String.valueOf(id)));
-        trade.setQuantity(request.quantity());
-        trade.setPrice(request.price());
-        trade.setTradeDate(request.tradeDate());
-        return trade;
+    if (counterpartyId != null) {
+        spec = spec.and(hasCounterparty(counterpartyId));
     }
 
-    @Transactional
-    public Trade updateStatus(Long id, String status) {
-        // TODO(TICKET-ADV066): confirm exact status-transition rules once available.
-        Trade trade = tradeRepository.findById(id)
-            .orElseThrow(() -> new TradeNotFoundException(String.valueOf(id)));
-        trade.setStatus(status);
-        return trade;
-    }
-
-    @Transactional
-    public void softDelete(Long id) {
-        // TODO(TICKET-ADV067): confirm exact soft-delete semantics once available.
-        Trade trade = tradeRepository.findById(id)
-            .orElseThrow(() -> new TradeNotFoundException(String.valueOf(id)));
-        trade.softDelete();
-    }
+    return tradeRepo.findAll(spec, pageable);
+}
 }

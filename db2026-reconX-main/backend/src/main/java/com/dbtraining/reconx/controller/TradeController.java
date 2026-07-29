@@ -20,7 +20,7 @@ import org.springframework.web.bind.annotation.*;
 
 import java.net.URI;
 import java.time.LocalDate;
-import java.util.List;
+import java.net.URI;
 import java.util.Map;
 
 /**
@@ -47,38 +47,51 @@ public class TradeController {
     }
 
     @GetMapping
-    @Operation(summary = "List trades — paginated, filterable, sortable")
-    public PagedResponse<TradeResponse> list(
-            @RequestParam(required = false) LocalDate from,
-            @RequestParam(required = false) LocalDate to,
-            @RequestParam(required = false) String status,
-            @RequestParam(required = false) Long counterpartyId,
-            @PageableDefault(size = 20, sort = "tradeDate", direction = Sort.Direction.DESC) Pageable pageable) {
-        // TODO(TICKET-ADV063): delegate to service.list(from, to, status, counterpartyId, pageable)
-        //   and wrap the resulting Page<Trade> via PagedResponse.from(page, mapper::toResponse).
-        //   For Day 1 return an empty PagedResponse so the React grid renders
-        //   "no trades match" while the JPA + Specifications work is still pending.
-        return new PagedResponse<>(List.of(), 0, 20, 0, 0);
-    }
+@Operation(summary = "List trades — paginated, filterable, sortable")
+public PagedResponse<TradeResponse> list(
+        @RequestParam(required = false) LocalDate from,
+        @RequestParam(required = false) LocalDate to,
+        @RequestParam(required = false) String status,
+        @RequestParam(required = false) Long counterpartyId,
+        @PageableDefault(size = 20, sort = "tradeDate", direction = Sort.Direction.DESC)
+        Pageable pageable) {
+
+    Page<Trade> trades =
+            service.list(from, to, status, counterpartyId, pageable);
+
+    return PagedResponse.from(trades, mapper::toResponse);
+}
 
     @PostMapping
-    @Operation(summary = "Create a trade")
-    public ResponseEntity<TradeResponse> create(@Valid @RequestBody TradeRequest req,
-                                                @AuthenticationPrincipal Object principal) {
-        // TODO(TICKET-ADV064): call service.create(req, actor), build a Location
-        //   header at /api/v1/trades/{id}, and return 201 Created with the
-        //   mapped TradeResponse body.
-        throw new UnsupportedOperationException("TICKET-ADV064");
-    }
+@Operation(summary = "Create a trade")
+public ResponseEntity<TradeResponse> create(
+        @Valid @RequestBody TradeRequest req,
+        @AuthenticationPrincipal Object principal) {
+
+    Trade saved = service.create(
+            req,
+            principal != null ? principal.toString() : "system"
+    );
+
+    return ResponseEntity
+            .created(URI.create("/api/v1/trades/" + saved.getId()))
+            .body(mapper.toResponse(saved));
+}
 
     @PutMapping("/{id}")
-    @Operation(summary = "Full update of a trade")
-    public TradeResponse update(@PathVariable Long id, @Valid @RequestBody TradeRequest req,
-                                @AuthenticationPrincipal Object principal) {
-        // TODO(TICKET-ADV065): delegate to service.update(id, req, actor) and
-        //   map the updated entity through mapper.toResponse.
-        throw new UnsupportedOperationException("TICKET-ADV065");
-    }
+@Operation(summary = "Full update of a trade")
+public TradeResponse update(@PathVariable Long id,
+                            @Valid @RequestBody TradeRequest req,
+                            @AuthenticationPrincipal Object principal) {
+
+    Trade updated = service.update(
+            id,
+            req,
+            principal != null ? principal.toString() : "system"
+    );
+
+    return mapper.toResponse(updated);
+}
 
     @PatchMapping("/{id}/status")
     @Operation(summary = "Update only the status field")
