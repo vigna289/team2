@@ -18,11 +18,15 @@
         xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
                             http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-4.27.xsd">
 
-    <changeSet id="004-partitioning" author="trainer" labels="postgres-only,performance">
+    <changeSet id="004-partitioning"
+               author="trainer"
+               labels="postgres-only,performance">
         <description>Convert trades table to monthly RANGE partitions on trade_date</description>
+
         <preConditions onFail="MARK_RAN">
             <dbms type="postgresql"/>
         </preConditions>
+
         <sql splitStatements="false"><![CDATA[
             -- 1. Rename existing table out of the way
             ALTER TABLE trades RENAME TO trades_legacy;
@@ -53,23 +57,29 @@
             -- 4. Monthly child partitions, April - July 2026
             CREATE TABLE trades_y2026m04 PARTITION OF trades
                 FOR VALUES FROM ('2026-04-01') TO ('2026-05-01');
+
             CREATE TABLE trades_y2026m05 PARTITION OF trades
                 FOR VALUES FROM ('2026-05-01') TO ('2026-06-01');
+
             CREATE TABLE trades_y2026m06 PARTITION OF trades
                 FOR VALUES FROM ('2026-06-01') TO ('2026-07-01');
+
             CREATE TABLE trades_y2026m07 PARTITION OF trades
                 FOR VALUES FROM ('2026-07-01') TO ('2026-08-01');
 
             -- 5. Default catch-all so out-of-window inserts never fail
             CREATE TABLE trades_default PARTITION OF trades DEFAULT;
 
-            -- 6. Migrate existing data, then verify before dropping legacy
-            INSERT INTO trades SELECT * FROM trades_legacy;
+            -- 6. Migrate existing data
+            INSERT INTO trades
+            SELECT * FROM trades_legacy;
         ]]></sql>
+
         <rollback>
             <sql>DROP TABLE IF EXISTS trades;</sql>
             <sql>ALTER TABLE trades_legacy RENAME TO trades;</sql>
         </rollback>
+
     </changeSet>
 
 </databaseChangeLog>
