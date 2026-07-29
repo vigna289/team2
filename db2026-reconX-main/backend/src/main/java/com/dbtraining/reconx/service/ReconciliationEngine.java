@@ -25,8 +25,12 @@ import java.util.stream.Collectors;
 @Service
 public class ReconciliationEngine {
 
-    @Timed(value = "reconciliation.duration", description = "Wall time of reconcile()",
-            percentiles = {0.5, 0.95, 0.99}, histogram = true)
+    @Timed(
+            value = "reconciliation.duration",
+            description = "Wall time of reconcile()",
+            percentiles = {0.5, 0.95, 0.99},
+            histogram = true
+    )
     public List<ReconResult> reconcile(List<TradeType> internal,
                                        List<TradeType> external,
                                        ReconciliationRule rule) {
@@ -59,6 +63,7 @@ public class ReconciliationEngine {
     public List<ReconResult> reconcileByCounterparty(List<TradeType> internal,
                                                      List<TradeType> external,
                                                      ReconciliationRule rule) {
+
         if (internal == null || internal.isEmpty()) {
             return List.of();
         }
@@ -72,21 +77,23 @@ public class ReconciliationEngine {
                 .collect(Collectors.groupingBy(this::counterpartyIdOf));
 
         // For each counterparty, reconcile in its own CompletableFuture
-        List<CompletableFuture<List<ReconResult>>> futures = internalByCp.entrySet().stream()
+        List<CompletableFuture<List<ReconResult>>> futures = internalByCp.entrySet()
+                .stream()
                 .map(entry -> CompletableFuture.supplyAsync(() ->
-                        reconcile(entry.getValue(),
+                        reconcile(
+                                entry.getValue(),
                                 externalByCp.getOrDefault(entry.getKey(), List.of()),
-                                rule)
-                ))
+                                rule)))
                 .toList();
 
         // Wait for all and combine
-        CompletableFuture<Void> all = CompletableFuture.allOf(
-                futures.toArray(new CompletableFuture[0]));
+        CompletableFuture<Void> all =
+                CompletableFuture.allOf(futures.toArray(new CompletableFuture[0]));
 
-        return all.thenApply(v -> futures.stream()
-                        .flatMap(f -> f.join().stream())
-                        .toList())
+        return all.thenApply(v ->
+                        futures.stream()
+                                .flatMap(f -> f.join().stream())
+                                .toList())
                 .join();
     }
 
@@ -130,7 +137,9 @@ public class ReconciliationEngine {
         );
     }
 
-    /** Exhaustive switch over the sealed TradeType hierarchy. */
+    /**
+     * Exhaustive switch over the sealed TradeType hierarchy.
+     */
     private BigDecimal[] priceQty(TradeType t) {
         return switch (t) {
             case EquityTrade e -> new BigDecimal[]{e.price(), e.quantity()};
@@ -140,7 +149,9 @@ public class ReconciliationEngine {
         };
     }
 
-    /** Helper: get counterparty id for grouping. */
+    /**
+     * Helper: get counterparty id for grouping.
+     */
     private String counterpartyIdOf(TradeType t) {
         return switch (t) {
             case EquityTrade e -> Long.toString(e.counterpartyId());
