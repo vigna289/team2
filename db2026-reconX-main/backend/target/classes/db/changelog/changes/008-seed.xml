@@ -20,7 +20,7 @@
                             http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-4.27.xsd">
 
     <changeSet id="008-seed-counterparties" author="trainer" labels="seed-data">
-        <description>Load counterparties seed data from CSV</description>
+        <comment>Load counterparties seed data from CSV</comment>
         <preConditions onFail="MARK_RAN">
             <rowCount tableName="counterparties" expectedRows="0"/>
         </preConditions>
@@ -34,7 +34,7 @@
     </changeSet>
 
     <changeSet id="008-seed-instruments" author="trainer" labels="seed-data">
-        <description>Load instruments seed data from CSV</description>
+        <comment>Load instruments seed data from CSV</comment>
         <preConditions onFail="MARK_RAN">
             <rowCount tableName="instruments" expectedRows="0"/>
         </preConditions>
@@ -48,7 +48,7 @@
     </changeSet>
 
     <changeSet id="008-seed-users" author="trainer" labels="seed-data,rbac">
-        <description>Insert 4 seed users with BCrypt-hashed passwords (admin, trader, viewer, recon)</description>
+        <comment>Insert 4 seed users with BCrypt-hashed passwords (admin, trader, viewer, recon)</comment>
         <preConditions onFail="MARK_RAN">
             <rowCount tableName="users" expectedRows="0"/>
         </preConditions>

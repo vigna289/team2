@@ -20,7 +20,7 @@
                             http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-4.27.xsd">
 
     <changeSet id="005-mv-daily-recon-summary" author="trainer" labels="postgres-only,analytics">
-        <description>Create materialized view for daily recon summary aggregates</description>
+        <comment>Create materialized view for daily recon summary aggregates</comment>
         <preConditions onFail="MARK_RAN">
             <dbms type="postgresql"/>
         </preConditions>
