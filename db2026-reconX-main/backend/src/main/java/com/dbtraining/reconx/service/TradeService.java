@@ -125,16 +125,20 @@ public class TradeService {
         return tradeRepository.save(trade);
     }
 
+    @Transactional
     public Trade updateStatus(Long id, String status, String actor) {
-        // TODO(TICKET-ADV066): load, setStatus(status), save, publish TRADE_UPDATED
-        //   with the new status in the "after" slot of the event.
-        throw new UnsupportedOperationException("TICKET-ADV066");
+        Trade trade = tradeRepository.findById(id)
+                .orElseThrow(() -> new TradeNotFoundException("Trade id: " + id));
+        trade.setStatus(status);
+        return tradeRepository.save(trade);
     }
 
+    @Transactional
     public void softDelete(Long id, String actor) {
-        // TODO(TICKET-ADV067): load, call t.softDelete() (sets deleted_at), save,
-        //   publish a TRADE_CANCELLED event.
-        throw new UnsupportedOperationException("TICKET-ADV067");
+        Trade trade = tradeRepository.findById(id)
+                .orElseThrow(() -> new TradeNotFoundException("Trade id: " + id));
+        trade.softDelete();
+        tradeRepository.save(trade);
     }
 
     @Transactional(readOnly = true)
