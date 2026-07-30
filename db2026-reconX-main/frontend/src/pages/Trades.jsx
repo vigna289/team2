@@ -17,7 +17,27 @@ function Trades() {
   //   - calls api.listTrades(params) and stores the response in `data`
   //   - re-runs whenever `page` or `debounced` changes
   //   - degrades gracefully on error (set empty page).
+useEffect(() => {
+  async function fetchTrades() {
+    try {
+      let params = `?page=${page}`;
 
+      if (debounced) {
+        params += `&status=${debounced}`;
+      }
+
+      const response = await api.listTrades(params);
+      setData(response);
+
+    } catch (error) {
+      console.error(error);
+      setData({ items: [], totalPages: 0 });
+    }
+  }
+
+  fetchTrades();
+
+}, [page, debounced]);
   return (
     <section>
       <h2>Trades</h2>
@@ -35,8 +55,18 @@ function Trades() {
           { key: 'price',    label: 'Price' },
           { key: 'status',   label: 'Status' },
         ]} />
-        {/* TODO(TICKET-ADV114): render a DataTable.Body with `rows={data.items}`
-            and a `render` prop that returns one <span> per column. */}
+       <DataTable.Body
+  		rows={data.items}
+  		render={(row) => (
+    <>
+      <span>{row.tradeRef}</span>
+      <span>{row.symbol}</span>
+      <span>{row.qty}</span>
+      <span>{row.price}</span>
+      <span>{row.status}</span>
+    </>
+  )}
+/>
         <DataTable.Pagination
           page={page}
           totalPages={Math.max(1, data.totalPages)}
