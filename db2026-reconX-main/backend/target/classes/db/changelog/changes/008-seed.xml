@@ -20,10 +20,10 @@
                             http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-4.27.xsd">
 
     <changeSet id="008-seed-counterparties" author="trainer" labels="seed-data">
-        <comment>Load counterparties seed data from CSV</comment>
         <preConditions onFail="MARK_RAN">
             <rowCount tableName="counterparties" expectedRows="0"/>
         </preConditions>
+        <comment>Load counterparties seed data from CSV</comment>
         <loadData file="data/counterparties.csv" tableName="counterparties"
                   separator="," relativeToChangelogFile="true">
             <column name="region" type="STRING"/>
@@ -34,10 +34,10 @@
     </changeSet>
 
     <changeSet id="008-seed-instruments" author="trainer" labels="seed-data">
-        <comment>Load instruments seed data from CSV</comment>
         <preConditions onFail="MARK_RAN">
             <rowCount tableName="instruments" expectedRows="0"/>
         </preConditions>
+        <comment>Load instruments seed data from CSV</comment>
         <loadData file="data/instruments.csv" tableName="instruments"
                   separator="," relativeToChangelogFile="true">
             <column name="isin" type="STRING"/>
@@ -48,27 +48,31 @@
     </changeSet>
 
     <changeSet id="008-seed-users" author="trainer" labels="seed-data,rbac">
-        <comment>Insert 4 seed users with BCrypt-hashed passwords (admin, trader, viewer, recon)</comment>
         <preConditions onFail="MARK_RAN">
             <rowCount tableName="users" expectedRows="0"/>
         </preConditions>
+        <comment>Insert 4 seed users with BCrypt-hashed passwords (admin, trader, viewer, recon)</comment>
         <!-- Real BCrypt hashes (cost=10) for admin123 / trader123 / viewer123 / recon123.
              Spring Security's BCryptPasswordEncoder accepts both $2a$ and $2y$ prefixes. -->
         <insert tableName="users">
             <column name="email" value="admin@db.com"/>
             <column name="role" value="ADMIN"/>
-        </insert>
-        <insert tableName="users">
+            <column name="password_hash" value="$2b$10$0l0SyqCEsn18NPIl2WU2OOOu.qsRJKxPzHovdAn1yWBfVg0wBs3UK"/>
+        </insert>        
+      <insert tableName="users">
             <column name="email" value="trader@db.com"/>
             <column name="role" value="TRADER"/>
+            <column name="password_hash" value="$2b$10$pt0UxJ0wY3QAyu2HQL7BHOlQMZGUsDYRUb5KkX5HgH3ixPxP3CagC"/>
         </insert>
         <insert tableName="users">
             <column name="email" value="viewer@db.com"/>
             <column name="role" value="VIEWER"/>
+            <column name="password_hash" value="$2b$10$s4H5XL30kR9.srZDftkageU9.uAJCYMXfdv3YpSLCIOf13qBzOB1e"/>
         </insert>
         <insert tableName="users">
             <column name="email" value="recon@db.com"/>
             <column name="role" value="RECON_ANALYST"/>
+            <column name="password_hash" value="$2b$10$yuOtjh6iwr88vQz/xJbvwu4KDfcPCWEnO3cPrU7HUa2sWAz2lW7oa"/>
         </insert>
         <rollback>
             <delete tableName="users"/>
@@ -76,3 +80,6 @@
     </changeSet>
 
 </databaseChangeLog>
+
+
+

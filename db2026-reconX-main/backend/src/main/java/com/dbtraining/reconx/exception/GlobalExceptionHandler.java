@@ -46,6 +46,13 @@ public class GlobalExceptionHandler {
         return pd;
     }
 
+    @ExceptionHandler(InvalidCredentialsException.class)
+    public ProblemDetail handleInvalidCredentials(InvalidCredentialsException ex) {
+        ProblemDetail pd = ProblemDetail.forStatusAndDetail(HttpStatus.UNAUTHORIZED, ex.getMessage());
+        pd.setTitle("Unauthorized");
+        return pd;
+    }
+
     @ExceptionHandler(ReconciliationMismatchException.class)
     public ProblemDetail handleReconMismatch(ReconciliationMismatchException ex) {
         ProblemDetail pd = ProblemDetail.forStatusAndDetail(HttpStatus.UNPROCESSABLE_ENTITY, ex.getMessage());
