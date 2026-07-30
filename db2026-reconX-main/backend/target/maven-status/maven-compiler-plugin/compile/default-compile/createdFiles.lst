@@ -45,6 +45,7 @@ com\dbtraining\reconx\repository\entity\Instrument.class
 com\dbtraining\reconx\observability\TradesByStatusGauge.class
 com\dbtraining\reconx\exception\InvalidTradeException.class
 com\dbtraining\reconx\dto\TradeEvent$EventType.class
+com\dbtraining\reconx\jmx\ReconConfig.class
 com\dbtraining\reconx\model\EquityTrade$Builder.class
 com\dbtraining\reconx\model\TradeRef.class
 com\dbtraining\reconx\security\JwtAuthenticationFilter.class

@@ -2,12 +2,16 @@ package com.dbtraining.reconx.controller;
 
 import com.dbtraining.reconx.dto.TradeRequest;
 import com.dbtraining.reconx.repository.entity.Trade;
+import com.dbtraining.reconx.security.JwtTokenProvider;
+import com.dbtraining.reconx.security.SecurityConfig;
 import com.dbtraining.reconx.service.TradeService;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
 import org.springframework.boot.test.mock.mockito.MockBean;
+import org.springframework.context.annotation.Import;
+import org.springframework.data.jpa.mapping.JpaMetamodelMappingContext;
 import org.springframework.http.MediaType;
 import org.springframework.security.test.context.support.WithMockUser;
 import org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors;
@@ -28,6 +32,7 @@ import com.dbtraining.reconx.dto.TradeMapper;
 
 
 @WebMvcTest(TradeController.class)
+@Import(SecurityConfig.class)
 class TradeControllerWebMvcTest {
 
     @Autowired
@@ -41,6 +46,13 @@ class TradeControllerWebMvcTest {
 
     @MockBean
     private TradeMapper tradeMapper;
+
+    @MockBean
+    private JwtTokenProvider jwtTokenProvider;
+
+    @MockBean
+    private JpaMetamodelMappingContext jpaMetamodelMappingContext;
+
     private TradeRequest validRequest() {
         return new TradeRequest(
                 "TRD-20260315-9999",
@@ -72,5 +84,13 @@ class TradeControllerWebMvcTest {
                         .content(objectMapper.writeValueAsString(validRequest()))
                         .with(SecurityMockMvcRequestPostProcessors.csrf()))
                 .andExpect(status().isCreated());
+    }
+
+    @Test
+    void testCreateTrade_unauthenticated_returns401() throws Exception {
+        mockMvc.perform(post("/api/v1/trades")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(validRequest())))
+                .andExpect(status().isUnauthorized());
     }
 }
