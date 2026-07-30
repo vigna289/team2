@@ -7,8 +7,9 @@ import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import org.springframework.web.bind.annotation.*;
 
-import java.util.List;
 
+import java.util.List;
+import java.util.Collections;
 /**
  * TICKET-ADV071 — GET /api/v1/audit/trades/{tradeRef}
  * TICKET-ADV138 — GET /api/v1/audit/trades/{tradeRef}/events
