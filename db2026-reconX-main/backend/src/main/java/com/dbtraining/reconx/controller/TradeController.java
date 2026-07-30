@@ -17,6 +17,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
+import java.net.URI;
 import java.time.LocalDate;
 import java.util.List;
 
@@ -62,10 +63,10 @@ public class TradeController {
     @Operation(summary = "Create a trade")
     public ResponseEntity<TradeResponse> create(@Valid @RequestBody TradeRequest req,
                                                 @AuthenticationPrincipal Object principal) {
-        // TODO(TICKET-ADV064): call service.create(req, actor), build a Location
-        //   header at /api/v1/trades/{id}, and return 201 Created with the
-        //   mapped TradeResponse body.
-        throw new UnsupportedOperationException("TICKET-ADV064");
+        var actor = principal == null ? "anonymous" : String.valueOf(principal);
+        var created = service.create(req, actor);
+        var response = mapper.toResponse(created);
+        return ResponseEntity.created(URI.create("/api/v1/trades/" + created.getId())).body(response);
     }
 
     @PutMapping("/{id}")
