@@ -24,6 +24,9 @@
     <changeSet id="004-partitioning" author="trainer">
         <preConditions onFail="MARK_RAN">
             <dbms type="postgresql"/>
+            <not>
+                <indexExists indexName="idx_trades_status" tableName="trades"/>
+            </not>
         </preConditions>
         <sql splitStatements="false"><![CDATA[
             -- 1. Rename existing table out of the way

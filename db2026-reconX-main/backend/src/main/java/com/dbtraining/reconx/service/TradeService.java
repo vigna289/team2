@@ -120,8 +120,15 @@ public class TradeService {
                         "Trade id: " + id));
 
         trade.setStatus(status);
-
-        return tradeRepository.save(trade);
+                Trade saved = tradeRepository.save(trade);
+                // initialize lazily-loaded associations before returning (avoid LazyInitializationException in mappers)
+                if (saved.getInstrument() != null) {
+                        saved.getInstrument().getSymbol();
+                }
+                if (saved.getCounterparty() != null) {
+                        saved.getCounterparty().getName();
+                }
+                return saved;
     }
 
 
@@ -166,6 +173,12 @@ public class TradeService {
             );
         }
 
-        return tradeRepository.findAll(spec, pageable);
+                Page<Trade> page = tradeRepository.findAll(spec, pageable);
+                // initialize lazy associations while still in transaction to avoid LazyInitializationException
+                page.getContent().forEach(t -> {
+                        if (t.getInstrument() != null) t.getInstrument().getSymbol();
+                        if (t.getCounterparty() != null) t.getCounterparty().getName();
+                });
+                return page;
     }
 }

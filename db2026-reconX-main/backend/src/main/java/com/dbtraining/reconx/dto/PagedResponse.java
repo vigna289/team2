@@ -9,7 +9,7 @@ import java.util.List;
  * JSON-friendly shape. Avoids exposing Spring Data internals to clients.
  */
 public record PagedResponse<T>(
-        List<T> items,
+        List<T> content,
         int page,
         int size,
         long totalElements,
