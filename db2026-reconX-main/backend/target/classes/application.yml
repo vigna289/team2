@@ -13,9 +13,12 @@
 spring:
   application:
     name: reconx
+
+  jmx:
+    enabled: true
+
   profiles:
     active: ${SPRING_PROFILES_ACTIVE:dev}
-
   # ADV012 — Liquibase classpath wiring (the classic starter bug is missing the
   # `classpath:` prefix here, which causes a silent skip on JAR builds).
   liquibase:
