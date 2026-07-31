@@ -5,14 +5,18 @@ import com.dbtraining.reconx.dto.TradeMapper;
 import com.dbtraining.reconx.dto.TradeRequest;
 import com.dbtraining.reconx.dto.StatusUpdate;
 import com.dbtraining.reconx.dto.TradeResponse;
+import com.dbtraining.reconx.repository.entity.Trade;
 import com.dbtraining.reconx.service.TradeService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
+import jakarta.servlet.http.HttpServletResponse;
+import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.data.web.PageableDefault;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
@@ -42,6 +46,16 @@ public class TradeController {
     public TradeController(TradeService service, TradeMapper mapper) {
         this.service = service;
         this.mapper = mapper;
+    }
+
+    @Deprecated(since = "v1.4.0", forRemoval = true)
+    @GetMapping("/old-search")
+    @Operation(summary = "Deprecated example endpoint for API versioning")
+    public ResponseEntity<Void> oldSearch(HttpServletResponse response) {
+        response.setHeader("Deprecation", "true");
+        response.setHeader("Sunset", "Sat, 01 Jul 2026 00:00:00 GMT");
+        response.setHeader("Link", "</api/v1/trades>; rel=\"successor-version\"");
+        return ResponseEntity.status(HttpStatus.GONE).build();
     }
 
     @GetMapping

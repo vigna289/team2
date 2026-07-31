@@ -204,6 +204,11 @@ Below each block the method body is replaced with `// TODO(TICKET-IHxxx)` and
 either an `UnsupportedOperationException` or a minimal placeholder return.
 Your job is to remove the TODO and implement the body.
 
+API versioning note: new breaking changes should ship under a new `/api/v{n}/`
+segment, while the previous version remains available until its `Sunset` date.
+This keeps older clients working during a migration window and makes
+deprecated endpoints explicit.
+
 The full ticket text, acceptance criteria, and step-by-step hints live in the
 matching day's README under [`./student-guides/`](./student-guides/README.md).
 
