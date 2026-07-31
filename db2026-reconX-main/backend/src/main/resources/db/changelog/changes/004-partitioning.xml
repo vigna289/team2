@@ -29,7 +29,7 @@
             -- 1. Rename existing table out of the way
             ALTER TABLE trades RENAME TO trades_legacy;
 
-            -- 2. Create partitioned parent (same columns, PK includes trade_date)
+            -- 2. Create partitioned parent (same columns, keep a simple PK on id)
             CREATE TABLE trades (
                 id              BIGSERIAL,
                 trade_ref       VARCHAR(30)   NOT NULL,
@@ -47,7 +47,12 @@
                 PRIMARY KEY (id, trade_date)
             ) PARTITION BY RANGE (trade_date);
 
-            -- 3. Indexes on the parent (Postgres propagates these to children)
+            -- 3. Recreate indexes on the parent (Postgres propagates these to children)
+            DROP INDEX IF EXISTS idx_trades_trade_date;
+            DROP INDEX IF EXISTS idx_trades_status;
+            DROP INDEX IF EXISTS idx_trades_instrument_id;
+            DROP INDEX IF EXISTS idx_trades_counterparty_id;
+            CREATE INDEX idx_trades_trade_date ON trades (trade_date);
             CREATE INDEX idx_trades_status ON trades (status);
             CREATE INDEX idx_trades_instrument_id ON trades (instrument_id);
             CREATE INDEX idx_trades_counterparty_id ON trades (counterparty_id);
