@@ -1,0 +1,57 @@
+// frontend/src/pages/Dashboard.test.jsx
+// TICKET-ADV125 — RTL test for the dashboard summary cards. Fully
+// synchronous, no live backend, uses role queries (not getByText /
+// getByTestId) so it survives copy changes.
+import { describe, it, expect } from 'vitest';
+import { render, screen } from '@testing-library/react';
+import { MemoryRouter } from 'react-router-dom';
+import { ThemeProvider } from '@context/ThemeContext';
+import { AuthContext } from '@context/AuthContext';
+import Dashboard from './Dashboard';
+
+const trades = [
+  { id: 1, tradeRef: 'TRD-2026-0001', instrument: 'SAP.DE', quantity: 100, price: 250, status: 'MATCHED' },
+  { id: 2, tradeRef: 'TRD-2026-0002', instrument: 'SAP.DE', quantity: 50, price: 251, status: 'UNMATCHED' },
+];
+
+beforeAll(() => {
+  global.EventSource = class {
+    constructor() {}
+    close() {}
+    onopen() {}
+    onmessage() {}
+    onerror() {}
+  };
+});
+
+function renderWithProviders(ui) {
+  const user = { email: 'trader@db.com', role: 'TRADER' };
+  return render(
+    <AuthContext.Provider value={{ user, isLoading: false }}>
+      <ThemeProvider>
+        <MemoryRouter>{ui}</MemoryRouter>
+      </ThemeProvider>
+    </AuthContext.Provider>
+  );
+}
+
+describe('<Dashboard />', () => {
+  it('shows summary cards', () => {
+    renderWithProviders(<Dashboard trades={trades} />);
+
+    expect(
+      screen.getByRole('heading', { name: /^portfolio value/i })
+    ).toBeInTheDocument();
+    
+    expect(
+      screen.getByRole('heading', { name: /^matched trades$/i })
+    ).toBeInTheDocument();
+    
+    expect(
+      screen.getByRole('heading', { name: /^unmatched trades$/i })
+    ).toBeInTheDocument();
+    
+    expect(screen.getByText(/37,550/)).toBeInTheDocument();
+    
+  });
+});

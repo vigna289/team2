@@ -1,26 +1,46 @@
-// TICKET-ADV124 — ThemeProvider: context flips data-theme; CSS owns colours.
-import React, { createContext, useContext, useState } from 'react';
+// frontend/src/context/ThemeContext.jsx
+// TICKET-ADV124 — Theme context. React owns the flip (one string of
+// state); CSS owns the actual colour values via [data-theme="dark"]
+// selectors that already exist from Day 7. Seeded from localStorage,
+// falling back to the OS-level prefers-color-scheme on first visit.
+import React, { createContext, useContext, useEffect, useState } from 'react';
 
-const ThemeContext = createContext({ theme: 'light', toggle: () => {} });
+const STORAGE_KEY = 'reconx-theme';
+
+const ThemeContext = createContext(null);
+
+function initialTheme() {
+  if (typeof window === 'undefined') return 'light';
+
+  const stored = window.localStorage.getItem(STORAGE_KEY);
+  if (stored === 'light' || stored === 'dark') return stored;
+
+  const prefersDark = window.matchMedia &&
+    window.matchMedia('(prefers-color-scheme: dark)').matches;
+  return prefersDark ? 'dark' : 'light';
+}
 
 export function ThemeProvider({ children }) {
-  // TODO(TICKET-ADV124): lazy-init from localStorage('reconx-theme') — fall back
-  //                     to 'light' if nothing is stored.
-  const [theme /*, setTheme */] = useState('light');
+  const [theme, setTheme] = useState(initialTheme);
 
-  // TODO(TICKET-ADV124): useEffect that:
-  //                     1. sets document.documentElement.dataset.theme = theme
-  //                     2. persists `theme` to localStorage on every change.
+  useEffect(() => {
+    document.documentElement.dataset.theme = theme;
+    window.localStorage.setItem(STORAGE_KEY, theme);
+  }, [theme]);
 
-  const toggle = () => {
-    // TODO(TICKET-ADV124): flip 'light' <-> 'dark' via setTheme(prev => ...).
-  };
+  const toggle = () => setTheme((t) => (t === 'light' ? 'dark' : 'light'));
 
   return (
-    <ThemeContext.Provider value={{ theme, toggle }}>
+    <ThemeContext.Provider value={{ theme, setTheme, toggle }}>
       {children}
     </ThemeContext.Provider>
   );
 }
 
-export const useTheme = () => useContext(ThemeContext);
+export function useTheme() {
+  const ctx = useContext(ThemeContext);
+  if (ctx === null) {
+    throw new Error('useTheme() must be used inside a <ThemeProvider>');
+  }
+  return ctx;
+}
