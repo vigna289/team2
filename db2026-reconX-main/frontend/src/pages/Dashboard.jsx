@@ -7,9 +7,9 @@
 // The optional `trades` prop lets TICKET-ADV125's RTL test render this
 // component with seeded data, bypassing useTradeStream()'s live
 // EventSource entirely — no backend/mocking needed for the test.
-import React, { useMemo } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { withAuth } from '@components/withAuth.jsx';
-import { useTradeStream } from '@hooks/useTradeStream.js';
+import { api } from '@services/apiService.js';
 
 function StatCard({ label, value }) {
   return (
@@ -21,13 +21,29 @@ function StatCard({ label, value }) {
 }
 
 function Dashboard({ trades: tradesProp }) {
-  const stream = useTradeStream();
-  const trades = tradesProp ?? stream.trades;
-  const isConnected = tradesProp ? true : stream.isConnected;
+  const [trades, setTrades] = useState(tradesProp ?? []);
+  const [isConnected, setIsConnected] = useState(false);
+  const [error, setError] = useState(null);
 
-  // Worth memoising: O(n) reduce over potentially hundreds of trades,
-  // recomputed every time a new trade streams in — but not on every
-  // unrelated render (e.g. theme toggle re-rendering the whole tree).
+  useEffect(() => {
+    if (tradesProp) {
+      return;
+    }
+
+    async function loadTrades() {
+      try {
+        const response = await api.listTrades();
+        setTrades(response.content ?? []);
+        setIsConnected(true);
+      } catch (err) {
+        setError(err.message);
+        setIsConnected(false);
+      }
+    }
+
+    loadTrades();
+  }, [tradesProp]);
+
   const portfolioValue = useMemo(
     () => trades.reduce((sum, t) => sum + (t.quantity * t.price || 0), 0),
     [trades]
@@ -45,15 +61,16 @@ function Dashboard({ trades: tradesProp }) {
   return (
     <section>
       <h2>Dashboard</h2>
+      {error && <div role="alert" className="form-error">{error}</div>}
       <div className="stat-grid">
         <StatCard label="Portfolio value (USD)" value={portfolioValue.toLocaleString()} />
-        <StatCard label="Trades streamed" value={trades.length} />
+        <StatCard label="Trades loaded" value={trades.length} />
         <StatCard label="Matched trades" value={stats.matched} />
         <StatCard label="Unmatched trades" value={stats.unmatched} />
         <StatCard label="Disputed" value={stats.disputed} />
       </div>
       <div role="status" aria-live="polite">
-        SSE: {isConnected ? 'connected' : 'disconnected'}
+        API: {isConnected ? 'connected' : 'disconnected'}
       </div>
     </section>
   );

@@ -24,8 +24,8 @@ class ReconciliationServiceTest {
         // given
         ReconResultRepository repository = mock(ReconResultRepository.class);
         ReconciliationService service = new ReconciliationService(new ReconciliationEngine(), repository);
-        EquityTrade internal = equity("TRD-1");
-        EquityTrade external = equity("TRD-1");
+        EquityTrade internal = equity("EQU-20260603-0001");
+        EquityTrade external = equity("EQU-20260603-0001");
 
         // when
         service.runRecon(List.of(internal), List.of(external), ReconciliationRule.EXACT);
@@ -33,7 +33,7 @@ class ReconciliationServiceTest {
         // then
         ArgumentCaptor<ReconResult> captor = ArgumentCaptor.forClass(ReconResult.class);
         verify(repository).save(captor.capture());
-        assertThat(captor.getValue().tradeRef()).isEqualTo("TRD-1");
+        assertThat(captor.getValue().tradeRef()).isEqualTo("EQU-20260603-0001");
         assertThat(captor.getValue().status()).isEqualTo(ReconResult.Status.MATCHED);
     }
 

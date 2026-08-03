@@ -15,6 +15,10 @@ spring:
       enabled: true
       path: /h2
 
+# Set the dev server port outside of the spring namespace so Spring Boot honors it.
+server:
+  port: 8081
+
   # H2 doesn't ship a JSONB type — Liquibase preconditions in the changelog skip
   # the JSONB GIN-index step on H2 (see 003-jsonb.xml).
   jpa:

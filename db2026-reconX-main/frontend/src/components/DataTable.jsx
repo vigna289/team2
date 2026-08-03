@@ -36,12 +36,12 @@ DataTable.Header = function Header({ columns }) {
   );
 };
 
-DataTable.Body = function Body({ rows, render }) {
+DataTable.Body = function Body({ rows, renderRow }) {
   return (
     <div className="data-table__body">
       {rows.map((row) => (
         <div key={row.id} className="data-table__row">
-          {render(row)}
+          {renderRow(row)}
         </div>
       ))}
     </div>

@@ -8,17 +8,17 @@ import React from 'react';
 
 function TradeRowImpl({ trade, onClick }) {
   return (
-    <tr onClick={() => onClick(trade.id)}>
-      <td>{trade.tradeRef}</td>
-      <td>{trade.instrument}</td>
-      <td>{trade.quantity}</td>
-      <td>{trade.price}</td>
-      <td>
+    <div className="trade-row" onClick={() => onClick(trade.id)}>
+      <div className="trade-row__cell">{trade.tradeRef}</div>
+      <div className="trade-row__cell">{trade.instrument}</div>
+      <div className="trade-row__cell">{trade.quantity}</div>
+      <div className="trade-row__cell">{trade.price}</div>
+      <div className="trade-row__cell">
         <span className={`status-pill ${trade.status.toLowerCase()}`}>
           {trade.status}
         </span>
-      </td>
-    </tr>
+      </div>
+    </div>
   );
 }
 
