@@ -3,12 +3,13 @@
 // ADV119's memo equality includes prev.onClick === next.onClick; without
 // useCallback, every parent render rebuilds a new arrow function and the
 // memo silently fails. This is what makes ADV119's win real.
-import React, { useCallback, useState } from 'react';
+import React, { useCallback, useEffect, useState } from 'react';
 import { withAuth } from '@components/withAuth.jsx';
 import { TradeRow } from '@components/TradeRow.jsx';
 import DataTable from '@components/DataTable.jsx';
 
 import { useDebouncedSearch } from '@hooks/useDebouncedSearch.js';
+import { api } from '@services/apiService.js';
 
 const columns = [
   { key: 'tradeRef', label: 'Trade Ref' },
@@ -21,15 +22,35 @@ const columns = [
 function Trades({ trades = [] }) {
   const [selectedId, setSelectedId] = useState(null);
   const [statusFilter, setStatusFilter] = useState('');
+  const [loadedTrades, setLoadedTrades] = useState(trades);
+  const [error, setError] = useState(null);
   const debouncedFilter = useDebouncedSearch(statusFilter, 300);
+
+  useEffect(() => {
+    if (trades.length > 0) {
+      setLoadedTrades(trades);
+      return;
+    }
+
+    async function loadTrades() {
+      try {
+        const response = await api.listTrades();
+        setLoadedTrades(response.content ?? []);
+      } catch (err) {
+        setError(err.message);
+      }
+    }
+
+    loadTrades();
+  }, [trades]);
 
   // Reference-stable across renders — the onClick prop on <TradeRow>
   // never changes identity, so ADV119's memo equality check passes.
   const handleSelect = useCallback((id) => setSelectedId(id), []);
 
   const filtered = debouncedFilter
-    ? trades.filter((t) => t.status.toLowerCase().includes(debouncedFilter.toLowerCase()))
-    : trades;
+    ? loadedTrades.filter((t) => t.status.toLowerCase().includes(debouncedFilter.toLowerCase()))
+    : loadedTrades;
 
   return (
     <section>
@@ -46,11 +67,13 @@ function Trades({ trades = [] }) {
       <DataTable data={filtered}>
         <DataTable.Header columns={columns} />
         <DataTable.Body
+          rows={filtered}
           renderRow={(t) => <TradeRow key={t.id} trade={t} onClick={handleSelect} />}
         />
         <DataTable.Pagination />
       </DataTable>
 
+      {error && <div role="alert" className="form-error">{error}</div>}
       {selectedId && <p>Selected trade id: {selectedId}</p>}
     </section>
   );

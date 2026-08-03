@@ -67,13 +67,33 @@
             <column name="resolved_at" type="TIMESTAMP"/>
             <column name="resolution_note" type="VARCHAR(500)"/>
         </createTable>
+        <rollback>
+            <dropTable tableName="recon_breaks"/>
+        </rollback>
+    </changeSet>
+
+    <changeSet id="006-create-recon-breaks-fk-postgres" author="trainer" labels="core-schema,recon" dbms="postgresql">
+        <preConditions onFail="MARK_RAN">
+            <not>
+                <foreignKeyConstraintExists foreignKeyName="fk_recon_breaks_trade"/>
+            </not>
+        </preConditions>
         <addForeignKeyConstraint baseTableName="recon_breaks" baseColumnNames="trade_id,trade_date"
                                  constraintName="fk_recon_breaks_trade"
                                  referencedTableName="trades" referencedColumnNames="id,trade_date"
                                  onDelete="CASCADE"/>
-        <rollback>
-            <dropTable tableName="recon_breaks"/>
-        </rollback>
+    </changeSet>
+
+    <changeSet id="006-create-recon-breaks-fk-h2" author="trainer" labels="core-schema,recon" dbms="h2">
+        <preConditions onFail="MARK_RAN">
+            <not>
+                <foreignKeyConstraintExists foreignKeyName="fk_recon_breaks_trade_h2"/>
+            </not>
+        </preConditions>
+        <addForeignKeyConstraint baseTableName="recon_breaks" baseColumnNames="trade_id"
+                                 constraintName="fk_recon_breaks_trade_h2"
+                                 referencedTableName="trades" referencedColumnNames="id"
+                                 onDelete="CASCADE"/>
     </changeSet>
 
     <changeSet id="006-create-recon-jobs" author="trainer" labels="core-schema,recon">

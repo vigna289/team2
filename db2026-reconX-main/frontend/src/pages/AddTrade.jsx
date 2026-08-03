@@ -2,7 +2,8 @@
 // TICKET-ADV123 — react-hook-form (uncontrolled inputs) + Yup schema.
 // RHF only pays off if the inputs stay uncontrolled — no value/onChange
 // wired by hand anywhere below; register() does that work.
-import React from 'react';
+import React, { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { useForm } from 'react-hook-form';
 import { yupResolver } from '@hookform/resolvers/yup';
 import * as yup from 'yup';
@@ -49,6 +50,8 @@ const schema = yup.object({
 });
 
 function AddTrade() {
+  const navigate = useNavigate();
+  const [submitError, setSubmitError] = useState(null);
   const {
     register,
     handleSubmit,
@@ -70,8 +73,14 @@ function AddTrade() {
   });
 
   async function onSubmit(values) {
-    await api.createTrade(values);
-    reset();
+    setSubmitError(null);
+    try {
+      await api.createTrade(values);
+      reset();
+      navigate('/trades');
+    } catch (err) {
+      setSubmitError(err.message);
+    }
   }
 
   return (
@@ -138,6 +147,7 @@ function AddTrade() {
           {isSubmitting ? 'Submitting…' : 'Submit'}
         </button>
       </form>
+      {submitError && <div role="alert" className="form-error">{submitError}</div>}
     </section>
   );
 }
