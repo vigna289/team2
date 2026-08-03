@@ -12,6 +12,7 @@ com\dbtraining\reconx\dto\TradeResponse.class
 com\dbtraining\reconx\observability\DatabaseHealthIndicator.class
 com\dbtraining\reconx\kafka\ReconciliationConsumer.class
 com\dbtraining\reconx\service\ReconciliationService.class
+com\dbtraining\reconx\controller\DeprecatedTradeController.class
 com\dbtraining\reconx\controller\TradeController.class
 com\dbtraining\reconx\model\EquityTrade.class
 com\dbtraining\reconx\observability\KafkaHealthIndicator.class
