@@ -78,7 +78,178 @@
             <delete tableName="users"/>
         </rollback>
     </changeSet>
+<!-- ========================= -->
+<!-- SAMPLE TRADES DATA -->
+<!-- ========================= -->
 
+<!-- ========================= -->
+<!-- TRADES SEED DATA -->
+<!-- ========================= -->
+
+<changeSet id="009-seed-trades" author="trainer">
+
+    <preConditions onFail="MARK_RAN">
+        <rowCount tableName="trades" expectedRows="0"/>
+    </preConditions>
+
+    <comment>Insert sample trades for dashboard testing</comment>
+
+    <insert tableName="trades">
+        <column name="trade_ref" value="TRD1001"/>
+        <column name="instrument_id" valueNumeric="1"/>
+        <column name="counterparty_id" valueNumeric="1"/>
+        <column name="asset_class" value="EQUITY"/>
+        <column name="side" value="BUY"/>
+        <column name="quantity" valueNumeric="100"/>
+        <column name="price" valueNumeric="150.50"/>
+        <column name="trade_date" valueDate="2026-07-01"/>
+        <column name="status" value="MATCHED"/>
+    </insert>
+
+
+    <insert tableName="trades">
+        <column name="trade_ref" value="TRD1002"/>
+        <column name="instrument_id" valueNumeric="2"/>
+        <column name="counterparty_id" valueNumeric="2"/>
+        <column name="asset_class" value="EQUITY"/>
+        <column name="side" value="SELL"/>
+        <column name="quantity" valueNumeric="200"/>
+        <column name="price" valueNumeric="250.75"/>
+        <column name="trade_date" valueDate="2026-07-02"/>
+        <column name="status" value="UNMATCHED"/>
+    </insert>
+
+
+    <rollback>
+        <delete tableName="trades"/>
+    </rollback>
+    <!-- ========================= -->
+    <!-- TRADES SEED DATA -->
+    <!-- ========================= -->
+
+    <changeSet id="009-seed-trades" author="trainer" labels="seed-data">
+
+        <preConditions onFail="MARK_RAN">
+            <rowCount tableName="trades" expectedRows="0"/>
+        </preConditions>
+
+        <comment>Insert sample trade records</comment>
+
+
+        <insert tableName="trades">
+            <column name="trade_ref" value="TRD1001"/>
+            <column name="instrument_id" valueNumeric="1"/>
+            <column name="counterparty_id" valueNumeric="1"/>
+            <column name="asset_class" value="EQUITY"/>
+            <column name="side" value="BUY"/>
+            <column name="quantity" valueNumeric="100"/>
+            <column name="price" valueNumeric="150.50"/>
+            <column name="trade_date" valueDate="2026-07-01"/>
+            <column name="status" value="MATCHED"/>
+        </insert>
+
+
+        <insert tableName="trades">
+            <column name="trade_ref" value="TRD1002"/>
+            <column name="instrument_id" valueNumeric="2"/>
+            <column name="counterparty_id" valueNumeric="2"/>
+            <column name="asset_class" value="EQUITY"/>
+            <column name="side" value="SELL"/>
+            <column name="quantity" valueNumeric="200"/>
+            <column name="price" valueNumeric="250.75"/>
+            <column name="trade_date" valueDate="2026-07-02"/>
+            <column name="status" value="UNMATCHED"/>
+        </insert>
+
+
+        <insert tableName="trades">
+            <column name="trade_ref" value="TRD1003"/>
+            <column name="instrument_id" valueNumeric="3"/>
+            <column name="counterparty_id" valueNumeric="3"/>
+            <column name="asset_class" value="BOND"/>
+            <column name="side" value="BUY"/>
+            <column name="quantity" valueNumeric="50"/>
+            <column name="price" valueNumeric="500"/>
+            <column name="trade_date" valueDate="2026-07-03"/>
+            <column name="status" value="DISPUTED"/>
+        </insert>
+
+
+        <rollback>
+            <delete tableName="trades"/>
+        </rollback>
+
+    </changeSet>
+
+
+    <!-- ========================= -->
+    <!-- SETTLEMENTS SEED DATA -->
+    <!-- ========================= -->
+
+    <changeSet id="010-seed-settlements" author="trainer" labels="seed-data">
+
+        <preConditions onFail="MARK_RAN">
+            <rowCount tableName="settlements" expectedRows="0"/>
+        </preConditions>
+
+
+        <insert tableName="settlements">
+            <column name="trade_id" valueNumeric="1"/>
+            <column name="settlement_date" valueDate="2026-07-04"/>
+            <column name="amount" valueNumeric="15050"/>
+            <column name="status" value="SETTLED"/>
+        </insert>
+
+
+        <insert tableName="settlements">
+            <column name="trade_id" valueNumeric="2"/>
+            <column name="settlement_date" valueDate="2026-07-05"/>
+            <column name="amount" valueNumeric="50150"/>
+            <column name="status" value="PENDING"/>
+        </insert>
+
+
+        <rollback>
+            <delete tableName="settlements"/>
+        </rollback>
+
+    </changeSet>
+
+
+    <!-- ========================= -->
+    <!-- RECON BREAKS SEED DATA -->
+    <!-- ========================= -->
+
+    <changeSet id="011-seed-recon-breaks" author="trainer" labels="seed-data">
+
+        <preConditions onFail="MARK_RAN">
+            <rowCount tableName="recon_breaks" expectedRows="0"/>
+        </preConditions>
+
+
+        <insert tableName="recon_breaks">
+            <column name="trade_id" valueNumeric="2"/>
+            <column name="break_type" value="AMOUNT_MISMATCH"/>
+            <column name="description" value="Settlement amount mismatch found"/>
+            <column name="status" value="OPEN"/>
+        </insert>
+
+
+        <insert tableName="recon_breaks">
+            <column name="trade_id" valueNumeric="3"/>
+            <column name="break_type" value="MISSING_TRADE"/>
+            <column name="description" value="Trade missing from external system"/>
+            <column name="status" value="OPEN"/>
+        </insert>
+
+
+        <rollback>
+            <delete tableName="recon_breaks"/>
+        </rollback>
+
+    </changeSet>
+
+</changeSet>
 </databaseChangeLog>
 
 
