@@ -1,0 +1,164 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>ReconciliationEngine.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">reconx</a> &gt; <a href="index.source.html" class="el_package">com.dbtraining.reconx.service</a> &gt; <span class="el_source">ReconciliationEngine.java</span></div><h1>ReconciliationEngine.java</h1><pre class="source lang-java linenums">package com.dbtraining.reconx.service;
+
+import com.dbtraining.reconx.dto.ReconResult;
+import com.dbtraining.reconx.model.BondTrade;
+import com.dbtraining.reconx.model.DerivativeTrade;
+import com.dbtraining.reconx.model.EquityTrade;
+import com.dbtraining.reconx.model.FXTrade;
+import com.dbtraining.reconx.model.ReconciliationRule;
+import com.dbtraining.reconx.model.TradeType;
+import io.micrometer.core.annotation.Timed;
+import org.springframework.stereotype.Service;
+
+import java.math.BigDecimal;
+import java.util.List;
+import java.util.Map;
+import java.util.concurrent.CompletableFuture;
+import java.util.function.Function;
+import java.util.stream.Collectors;
+
+/**
+ * ReconciliationEngine — index externals for O(1) lookups, stream internals,
+ * and produce ReconResult per internal trade. Also provides a batched
+ * reconcileByCounterparty that runs each counterparty batch concurrently.
+ */
+@Service
+<span class="fc" id="L26">public class ReconciliationEngine {</span>
+
+    @Timed(
+            value = &quot;reconciliation.duration&quot;,
+            description = &quot;Wall time of reconcile()&quot;,
+            percentiles = {0.5, 0.95, 0.99},
+            histogram = true
+    )
+    public List&lt;ReconResult&gt; reconcile(List&lt;TradeType&gt; internal,
+                                       List&lt;TradeType&gt; external,
+                                       ReconciliationRule rule) {
+
+        // Guard: null or empty inputs → empty result list
+<span class="pc bpc" id="L39" title="1 of 4 branches missed.">        if (internal == null || internal.isEmpty()) {</span>
+<span class="fc" id="L40">            return List.of();</span>
+        }
+
+        // Build external index (tradeRef -&gt; TradeType). Treat null external as empty list.
+<span class="pc bpc" id="L44" title="1 of 2 branches missed.">        Map&lt;String, TradeType&gt; externalByRef = (external == null ? List.&lt;TradeType&gt;of() : external)</span>
+<span class="fc" id="L45">                .stream()</span>
+<span class="fc" id="L46">                .collect(Collectors.toMap(</span>
+<span class="fc" id="L47">                        t -&gt; t.tradeRef().value(),</span>
+<span class="fc" id="L48">                        Function.identity(),</span>
+<span class="nc" id="L49">                        (first, second) -&gt; first // keep first on duplicates</span>
+                ));
+
+        // Stream internals in parallel and match each one via constant-time lookup.
+<span class="fc" id="L53">        return internal.parallelStream()</span>
+<span class="fc" id="L54">                .map(in -&gt; matchOne(in, externalByRef.get(in.tradeRef().value()), rule))</span>
+<span class="fc" id="L55">                .toList();</span>
+    }
+
+    /**
+     * Reconcile by counterparty: inputs are lists containing many counterparties.
+     * We group each side by counterparty id and reconcile each counterparty in its own
+     * async task, then combine the results.
+     */
+    public List&lt;ReconResult&gt; reconcileByCounterparty(List&lt;TradeType&gt; internal,
+                                                     List&lt;TradeType&gt; external,
+                                                     ReconciliationRule rule) {
+
+<span class="nc bnc" id="L67" title="All 4 branches missed.">        if (internal == null || internal.isEmpty()) {</span>
+<span class="nc" id="L68">            return List.of();</span>
+        }
+
+        // Group both sides by counterparty id (null external handled as empty)
+<span class="nc" id="L72">        Map&lt;String, List&lt;TradeType&gt;&gt; internalByCp = internal.stream()</span>
+<span class="nc" id="L73">                .collect(Collectors.groupingBy(this::counterpartyIdOf));</span>
+
+<span class="nc bnc" id="L75" title="All 2 branches missed.">        Map&lt;String, List&lt;TradeType&gt;&gt; externalByCp = (external == null ? List.&lt;TradeType&gt;of() : external)</span>
+<span class="nc" id="L76">                .stream()</span>
+<span class="nc" id="L77">                .collect(Collectors.groupingBy(this::counterpartyIdOf));</span>
+
+        // For each counterparty, reconcile in its own CompletableFuture
+<span class="nc" id="L80">        List&lt;CompletableFuture&lt;List&lt;ReconResult&gt;&gt;&gt; futures = internalByCp.entrySet()</span>
+<span class="nc" id="L81">                .stream()</span>
+<span class="nc" id="L82">                .map(entry -&gt; CompletableFuture.supplyAsync(() -&gt;</span>
+<span class="nc" id="L83">                        reconcile(</span>
+<span class="nc" id="L84">                                entry.getValue(),</span>
+<span class="nc" id="L85">                                externalByCp.getOrDefault(entry.getKey(), List.of()),</span>
+                                rule)))
+<span class="nc" id="L87">                .toList();</span>
+
+        // Wait for all and combine
+<span class="nc" id="L90">        CompletableFuture&lt;Void&gt; all =</span>
+<span class="nc" id="L91">                CompletableFuture.allOf(futures.toArray(new CompletableFuture[0]));</span>
+
+<span class="nc" id="L93">        return all.thenApply(v -&gt;</span>
+<span class="nc" id="L94">                        futures.stream()</span>
+<span class="nc" id="L95">                                .flatMap(f -&gt; f.join().stream())</span>
+<span class="nc" id="L96">                                .toList())</span>
+<span class="nc" id="L97">                .join();</span>
+    }
+
+    private ReconResult matchOne(TradeType internal,
+                                 TradeType external,
+                                 ReconciliationRule rule) {
+
+<span class="fc" id="L104">        String ref = internal.tradeRef().value();</span>
+
+<span class="fc bfc" id="L106" title="All 2 branches covered.">        if (external == null) {</span>
+<span class="fc" id="L107">            return ReconResult.breakResult(</span>
+                    ref,
+                    &quot;MISSING_EXTERNAL&quot;,
+                    &quot;No matching external trade found&quot;
+            );
+        }
+
+<span class="fc" id="L114">        BigDecimal[] internalValues = priceQty(internal);</span>
+<span class="fc" id="L115">        BigDecimal[] externalValues = priceQty(external);</span>
+
+<span class="fc" id="L117">        boolean matches = rule.matches(</span>
+                internalValues[0],
+                internalValues[1],
+                externalValues[0],
+                externalValues[1]
+        );
+
+<span class="pc bpc" id="L124" title="1 of 2 branches missed.">        if (matches) {</span>
+<span class="fc" id="L125">            return ReconResult.matched(ref);</span>
+        }
+
+<span class="nc" id="L128">        return ReconResult.breakResult(</span>
+                ref,
+                &quot;VALUE_MISMATCH&quot;,
+<span class="nc" id="L131">                &quot;internal=%s/%s external=%s/%s&quot;.formatted(</span>
+                        internalValues[0],
+                        internalValues[1],
+                        externalValues[0],
+                        externalValues[1]
+                )
+        );
+    }
+
+    /**
+     * Exhaustive switch over the sealed TradeType hierarchy.
+     */
+    private BigDecimal[] priceQty(TradeType t) {
+<span class="pc bpc" id="L144" title="3 of 4 branches missed.">        return switch (t) {</span>
+<span class="fc" id="L145">            case EquityTrade e -&gt; new BigDecimal[]{e.price(), e.quantity()};</span>
+<span class="nc" id="L146">            case FXTrade f -&gt; new BigDecimal[]{f.fxRate(), f.notionalCcy1()};</span>
+<span class="nc" id="L147">            case BondTrade b -&gt; new BigDecimal[]{b.faceValue(), BigDecimal.ONE};</span>
+<span class="nc" id="L148">            case DerivativeTrade d -&gt; new BigDecimal[]{d.strike(), d.quantity()};</span>
+        };
+    }
+
+    /**
+     * Helper: get counterparty id for grouping.
+     */
+    private String counterpartyIdOf(TradeType t) {
+<span class="nc bnc" id="L156" title="All 4 branches missed.">        return switch (t) {</span>
+<span class="nc" id="L157">            case EquityTrade e -&gt; Long.toString(e.counterpartyId());</span>
+<span class="nc" id="L158">            case FXTrade f -&gt; Long.toString(f.counterpartyId());</span>
+<span class="nc" id="L159">            case BondTrade b -&gt; Long.toString(b.counterpartyId());</span>
+<span class="nc" id="L160">            case DerivativeTrade d -&gt; Long.toString(d.counterpartyId());</span>
+        };
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.12.202403310830</span></div></body></html>

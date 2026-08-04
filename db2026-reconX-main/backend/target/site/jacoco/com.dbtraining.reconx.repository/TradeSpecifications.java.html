@@ -1,0 +1,42 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>TradeSpecifications.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">reconx</a> &gt; <a href="index.source.html" class="el_package">com.dbtraining.reconx.repository</a> &gt; <span class="el_source">TradeSpecifications.java</span></div><h1>TradeSpecifications.java</h1><pre class="source lang-java linenums">package com.dbtraining.reconx.repository;
+
+import com.dbtraining.reconx.repository.entity.Trade;
+import org.springframework.data.jpa.domain.Specification;
+
+import java.time.LocalDate;
+
+/**
+ * Composable JPA Specifications for Trade. Each factory short-circuits to
+ * cb.conjunction() (a no-op WHERE true) when its argument is null, so
+ * callers can chain them freely via Specification.where(...).and(...)
+ * without pre-checking for nulls.
+ *
+ * NOTE: status is a plain String on the real Trade entity (not an enum) —
+ * hasStatus takes a String to match.
+ */
+public final class TradeSpecifications {
+
+    private TradeSpecifications() {}
+
+    public static Specification&lt;Trade&gt; hasStatus(String status) {
+<span class="nc bnc" id="L22" title="All 4 branches missed.">        return (root, q, cb) -&gt; (status == null || status.isBlank())</span>
+<span class="nc" id="L23">            ? cb.conjunction()</span>
+<span class="nc" id="L24">            : cb.equal(root.get(&quot;status&quot;), status);</span>
+    }
+
+    public static Specification&lt;Trade&gt; tradeDateBetween(LocalDate from, LocalDate to) {
+<span class="nc" id="L28">        return (root, q, cb) -&gt; {</span>
+<span class="nc bnc" id="L29" title="All 4 branches missed.">            if (from == null &amp;&amp; to == null) return cb.conjunction();</span>
+<span class="nc bnc" id="L30" title="All 2 branches missed.">            if (from == null)               return cb.lessThanOrEqualTo(root.get(&quot;tradeDate&quot;), to);</span>
+<span class="nc bnc" id="L31" title="All 2 branches missed.">            if (to == null)                 return cb.greaterThanOrEqualTo(root.get(&quot;tradeDate&quot;), from);</span>
+<span class="nc" id="L32">            return cb.between(root.get(&quot;tradeDate&quot;), from, to);</span>
+        };
+    }
+
+    public static Specification&lt;Trade&gt; hasCounterparty(Long counterpartyId) {
+<span class="nc bnc" id="L37" title="All 2 branches missed.">        return (root, q, cb) -&gt; counterpartyId == null</span>
+<span class="nc" id="L38">            ? cb.conjunction()</span>
+<span class="nc" id="L39">            : cb.equal(root.get(&quot;counterparty&quot;).get(&quot;id&quot;), counterpartyId);</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.12.202403310830</span></div></body></html>
