@@ -249,7 +249,108 @@ one).
 ---
 
 ## Final demo (Day 10)
+---
 
+## Runtime architecture
+
+```mermaid
+graph TD
+
+USER[User / Operations Team]
+
+FRONTEND[React 19 Frontend]
+BACKEND[Spring Boot Recon Service]
+
+POSTGRES[(PostgreSQL + Liquibase)]
+
+KAFKA[Apache Kafka]
+
+RECON[Recon Consumer]
+AUDIT[Audit Consumer]
+ALERT[Alert Consumer]
+
+PROM[Prometheus]
+GRAFANA[Grafana Dashboard]
+
+USER --> FRONTEND
+FRONTEND --> BACKEND
+
+BACKEND --> POSTGRES
+
+BACKEND --> KAFKA
+
+KAFKA --> RECON
+KAFKA --> AUDIT
+KAFKA --> ALERT
+
+BACKEND --> PROM
+PROM --> GRAFANA
+```
+
+The runtime architecture represents the ReconX application flow:
+
+- React frontend communicates with Spring Boot REST APIs
+- Backend manages trades, reconciliation, security, and persistence
+- PostgreSQL stores application data through Liquibase migrations
+- Kafka handles asynchronous trade events
+- Consumers process reconciliation, audit, and alert workflows
+- Prometheus and Grafana provide monitoring and visualization
+
+
+---
+
+## CI/CD + Deploy flow
+
+```mermaid
+graph LR
+
+DEV[Developer]
+
+GIT[GitHub Repository]
+
+PR[Pull Request]
+
+CI[GitHub Actions]
+
+LINT[Checkstyle]
+
+TEST[JUnit Tests]
+
+COVERAGE[JaCoCo Coverage Gate]
+
+DOCKER[Docker Build]
+
+GHCR[GitHub Container Registry]
+
+DEMO[Demo Laptop]
+
+DEV --> GIT
+GIT --> PR
+
+PR --> CI
+
+CI --> LINT
+CI --> TEST
+CI --> COVERAGE
+CI --> DOCKER
+
+DOCKER --> GHCR
+
+GHCR --> DEMO
+
+DEMO --> STACK[Docker Compose 7 Services]
+```
+
+The CI/CD pipeline validates every change through:
+
+- Checkstyle static analysis
+- Automated unit and integration tests
+- JaCoCo coverage enforcement
+- Docker image creation
+- GHCR publishing
+- Demo laptop deployment
+
+---
 A 20-minute end-to-end walkthrough:
 
 | Minutes | Content |

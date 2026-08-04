@@ -1,0 +1,48 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>ReconciliationRule.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">reconx</a> &gt; <a href="index.source.html" class="el_package">com.dbtraining.reconx.model</a> &gt; <span class="el_source">ReconciliationRule.java</span></div><h1>ReconciliationRule.java</h1><pre class="source lang-java linenums">package com.dbtraining.reconx.model;
+
+import java.math.BigDecimal;
+import java.math.RoundingMode;
+
+/**
+ * Enum-with-state: each constant carries its own price tolerance (%) and
+ * quantity tolerance (absolute units). matches() returns true only if BOTH
+ * the price diff (as %) and the qty diff (as abs) are within tolerance.
+ * BigDecimal.compareTo only — no double, no ==.
+ */
+<span class="fc" id="L12">public enum ReconciliationRule {</span>
+
+<span class="fc" id="L14">    EXACT(BigDecimal.ZERO, BigDecimal.ZERO),</span>
+<span class="fc" id="L15">    PRICE_TOLERANCE_1PCT(new BigDecimal(&quot;0.01&quot;), BigDecimal.ZERO),</span>
+<span class="fc" id="L16">    PRICE_TOLERANCE_50BPS(new BigDecimal(&quot;0.005&quot;), BigDecimal.ZERO),</span>
+<span class="fc" id="L17">    QTY_TOLERANCE_5UNITS(BigDecimal.ZERO, new BigDecimal(&quot;5&quot;)),</span>
+<span class="fc" id="L18">    LOOSE(new BigDecimal(&quot;0.05&quot;), new BigDecimal(&quot;10&quot;));</span>
+
+    private final BigDecimal priceTolerancePct;
+    private final BigDecimal qtyToleranceAbs;
+
+<span class="fc" id="L23">    ReconciliationRule(BigDecimal priceTolerancePct, BigDecimal qtyToleranceAbs) {</span>
+<span class="fc" id="L24">        this.priceTolerancePct = priceTolerancePct;</span>
+<span class="fc" id="L25">        this.qtyToleranceAbs   = qtyToleranceAbs;</span>
+<span class="fc" id="L26">    }</span>
+
+<span class="nc" id="L28">    public BigDecimal priceTolerancePct() { return priceTolerancePct; }</span>
+<span class="nc" id="L29">    public BigDecimal qtyToleranceAbs()   { return qtyToleranceAbs; }</span>
+
+    /**
+     * @return true if both the price diff (as %) and the qty diff (as abs)
+     *         are within this rule's tolerance.
+     */
+    public boolean matches(BigDecimal internalPrice, BigDecimal internalQty,
+                           BigDecimal externalPrice, BigDecimal externalQty) {
+<span class="fc" id="L37">        BigDecimal priceDiff = internalPrice.subtract(externalPrice).abs();</span>
+<span class="pc bpc" id="L38" title="1 of 2 branches missed.">        BigDecimal priceDiffPct = internalPrice.signum() == 0</span>
+<span class="nc" id="L39">                ? BigDecimal.ZERO</span>
+<span class="fc" id="L40">                : priceDiff.divide(internalPrice, 6, RoundingMode.HALF_UP);</span>
+<span class="fc" id="L41">        BigDecimal qtyDiff = internalQty.subtract(externalQty).abs();</span>
+
+<span class="fc bfc" id="L43" title="All 2 branches covered.">        boolean priceOk = priceDiffPct.compareTo(priceTolerancePct) &lt;= 0;</span>
+<span class="fc bfc" id="L44" title="All 2 branches covered.">        boolean qtyOk   = qtyDiff.compareTo(qtyToleranceAbs) &lt;= 0;</span>
+<span class="fc bfc" id="L45" title="All 4 branches covered.">        return priceOk &amp;&amp; qtyOk;</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.12.202403310830</span></div></body></html>

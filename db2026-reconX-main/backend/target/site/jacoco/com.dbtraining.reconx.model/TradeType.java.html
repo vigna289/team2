@@ -1,0 +1,39 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>TradeType.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">reconx</a> &gt; <a href="index.source.html" class="el_package">com.dbtraining.reconx.model</a> &gt; <span class="el_source">TradeType.java</span></div><h1>TradeType.java</h1><pre class="source lang-java linenums">package com.dbtraining.reconx.model;
+
+import java.time.LocalDate;
+import java.util.Comparator;
+
+/**
+ * Sealed root of the trade hierarchy. Only the four named permitted classes
+ * can implement it. Comparable natural ordering: most-recent trade first,
+ * ties broken by tradeRef ascending. Kept consistent with equals/hashCode
+ * (TICKET-ADV028), which is also keyed on tradeRef.
+ */
+public sealed interface TradeType
+        extends Comparable&lt;TradeType&gt;
+        permits EquityTrade, FXTrade, BondTrade, DerivativeTrade {
+
+    /** Stable natural key. Drives equals/hashCode. */
+    TradeRef tradeRef();
+
+    /** Notional value of the trade for reconciliation summaries. */
+    Money notional();
+
+    /** Business date the trade was struck on. */
+    LocalDate tradeDate();
+
+    /** Discriminator for switch expressions and persistence mapping. */
+    AssetClass assetClass();
+
+<span class="fc" id="L28">    Comparator&lt;TradeType&gt; NATURAL = Comparator</span>
+<span class="fc" id="L29">            .comparing(TradeType::tradeDate).reversed()</span>
+<span class="pc" id="L30">            .thenComparing(t -&gt; t.tradeRef().value());</span>
+
+    @Override
+    default int compareTo(TradeType other) {
+<span class="nc" id="L34">        return NATURAL.compare(this, other);</span>
+    }
+
+<span class="fc" id="L37">    enum AssetClass { EQUITY, FX, BOND, DERIVATIVE }</span>
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.12.202403310830</span></div></body></html>

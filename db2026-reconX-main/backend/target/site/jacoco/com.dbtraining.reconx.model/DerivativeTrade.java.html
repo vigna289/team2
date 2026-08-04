@@ -1,0 +1,118 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>DerivativeTrade.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">reconx</a> &gt; <a href="index.source.html" class="el_package">com.dbtraining.reconx.model</a> &gt; <span class="el_source">DerivativeTrade.java</span></div><h1>DerivativeTrade.java</h1><pre class="source lang-java linenums">package com.dbtraining.reconx.model;
+
+import java.math.BigDecimal;
+import java.time.LocalDate;
+import java.util.Currency;
+import java.util.Objects;
+
+public final class DerivativeTrade implements TradeType {
+
+<span class="nc" id="L10">    public enum OptionType { CALL, PUT }</span>
+
+    private final TradeRef tradeRef;
+    private final String underlying;
+    private final BigDecimal strike;
+    private final BigDecimal quantity;
+    private final LocalDate expiry;
+    private final OptionType optionType;
+    private final Currency currency;
+    private final Side side;
+    private final LocalDate tradeDate;
+    private final long counterpartyId;
+
+<span class="nc" id="L23">    private DerivativeTrade(Builder b) {</span>
+<span class="nc" id="L24">        this.tradeRef       = b.tradeRef;</span>
+<span class="nc" id="L25">        this.underlying     = b.underlying;</span>
+<span class="nc" id="L26">        this.strike         = b.strike;</span>
+<span class="nc" id="L27">        this.quantity       = b.quantity;</span>
+<span class="nc" id="L28">        this.expiry         = b.expiry;</span>
+<span class="nc" id="L29">        this.optionType     = b.optionType;</span>
+<span class="nc" id="L30">        this.currency       = b.currency;</span>
+<span class="nc" id="L31">        this.side           = b.side;</span>
+<span class="nc" id="L32">        this.tradeDate      = b.tradeDate;</span>
+<span class="nc" id="L33">        this.counterpartyId = b.counterpartyId;</span>
+<span class="nc" id="L34">    }</span>
+
+<span class="nc" id="L36">    public static Builder builder() { return new Builder(); }</span>
+
+<span class="nc" id="L38">    @Override public TradeRef tradeRef()     { return tradeRef; }</span>
+<span class="nc" id="L39">    @Override public LocalDate tradeDate()   { return tradeDate; }</span>
+<span class="nc" id="L40">    @Override public AssetClass assetClass() { return AssetClass.DERIVATIVE; }</span>
+<span class="nc" id="L41">    @Override public Money notional()        { return new Money(strike.multiply(quantity), currency); }</span>
+
+<span class="nc" id="L43">    public String underlying()       { return underlying; }</span>
+<span class="nc" id="L44">    public BigDecimal strike()       { return strike; }</span>
+<span class="nc" id="L45">    public BigDecimal quantity()     { return quantity; }</span>
+<span class="nc" id="L46">    public LocalDate expiry()        { return expiry; }</span>
+<span class="nc" id="L47">    public OptionType optionType()   { return optionType; }</span>
+<span class="nc" id="L48">    public Currency currency()       { return currency; }</span>
+<span class="nc" id="L49">    public Side side()               { return side; }</span>
+<span class="nc" id="L50">    public long counterpartyId()     { return counterpartyId; }</span>
+
+    @Override
+    public boolean equals(Object o) {
+<span class="nc bnc" id="L54" title="All 4 branches missed.">        return (o instanceof DerivativeTrade other) &amp;&amp; tradeRef.equals(other.tradeRef);</span>
+    }
+
+<span class="nc" id="L57">    @Override public int hashCode() { return tradeRef.hashCode(); }</span>
+
+    // NOTE: deliberately omits counterpartyId (PII line for this codebase).
+    @Override
+    public String toString() {
+<span class="nc" id="L62">        return &quot;DerivativeTrade[ref=%s, %s %s on %s, strike=%s %s, qty=%s, expiry=%s, side=%s]&quot;</span>
+<span class="nc" id="L63">                .formatted(tradeRef, optionType, underlying, tradeDate, strike,</span>
+<span class="nc" id="L64">                           currency.getCurrencyCode(), quantity, expiry, side);</span>
+    }
+
+<span class="nc" id="L67">    public static final class Builder {</span>
+        private TradeRef tradeRef;
+        private String underlying;
+        private BigDecimal strike, quantity;
+        private LocalDate expiry, tradeDate;
+        private OptionType optionType;
+        private Currency currency;
+        private Side side;
+        private long counterpartyId;
+
+<span class="nc" id="L77">        public Builder tradeRef(TradeRef v)        { this.tradeRef = v; return this; }</span>
+<span class="nc" id="L78">        public Builder underlying(String v)        { this.underlying = v; return this; }</span>
+<span class="nc" id="L79">        public Builder strike(BigDecimal v)        { this.strike = v; return this; }</span>
+<span class="nc" id="L80">        public Builder quantity(BigDecimal v)      { this.quantity = v; return this; }</span>
+<span class="nc" id="L81">        public Builder expiry(LocalDate v)         { this.expiry = v; return this; }</span>
+<span class="nc" id="L82">        public Builder optionType(OptionType v)    { this.optionType = v; return this; }</span>
+<span class="nc" id="L83">        public Builder currency(String code)       { this.currency = Currency.getInstance(code); return this; }</span>
+<span class="nc" id="L84">        public Builder side(Side v)                { this.side = v; return this; }</span>
+<span class="nc" id="L85">        public Builder tradeDate(LocalDate v)      { this.tradeDate = v; return this; }</span>
+<span class="nc" id="L86">        public Builder counterpartyId(long v)      { this.counterpartyId = v; return this; }</span>
+
+        /**
+         * @return a fully-constructed, validated DerivativeTrade — never null.
+         * @throws NullPointerException  if any required field was not set.
+         * @throws IllegalStateException if strike/quantity are not strictly
+         *                                positive, or expiry is before
+         *                                tradeDate. An already-expired
+         *                                option (relative to today) is still
+         *                                accepted — see class notes.
+         */
+        public DerivativeTrade build() {
+<span class="nc" id="L98">            Objects.requireNonNull(tradeRef,   &quot;tradeRef&quot;);</span>
+<span class="nc" id="L99">            Objects.requireNonNull(underlying, &quot;underlying&quot;);</span>
+<span class="nc" id="L100">            Objects.requireNonNull(strike,     &quot;strike&quot;);</span>
+<span class="nc" id="L101">            Objects.requireNonNull(quantity,   &quot;quantity&quot;);</span>
+<span class="nc" id="L102">            Objects.requireNonNull(expiry,     &quot;expiry&quot;);</span>
+<span class="nc" id="L103">            Objects.requireNonNull(optionType, &quot;optionType&quot;);</span>
+<span class="nc" id="L104">            Objects.requireNonNull(currency,   &quot;currency&quot;);</span>
+<span class="nc" id="L105">            Objects.requireNonNull(side,       &quot;side&quot;);</span>
+<span class="nc" id="L106">            Objects.requireNonNull(tradeDate,  &quot;tradeDate&quot;);</span>
+<span class="nc bnc" id="L107" title="All 2 branches missed.">            if (strike.signum() &lt;= 0)   throw new IllegalStateException(&quot;strike must be &gt; 0&quot;);</span>
+<span class="nc bnc" id="L108" title="All 2 branches missed.">            if (quantity.signum() &lt;= 0) throw new IllegalStateException(&quot;quantity must be &gt; 0&quot;);</span>
+            // NOTE: expiry is only checked against tradeDate, never LocalDate.now() —
+            // a historical option that has already expired is still a valid record
+            // for replay and reconciliation (see TICKET-ADV022 rationale).
+<span class="nc bnc" id="L112" title="All 2 branches missed.">            if (expiry.isBefore(tradeDate))</span>
+<span class="nc" id="L113">                throw new IllegalStateException(&quot;expiry cannot be before tradeDate&quot;);</span>
+<span class="nc" id="L114">            return new DerivativeTrade(this);</span>
+        }
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.12.202403310830</span></div></body></html>

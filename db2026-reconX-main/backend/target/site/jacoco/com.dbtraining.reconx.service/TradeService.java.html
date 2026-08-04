@@ -1,0 +1,185 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>TradeService.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">reconx</a> &gt; <a href="index.source.html" class="el_package">com.dbtraining.reconx.service</a> &gt; <span class="el_source">TradeService.java</span></div><h1>TradeService.java</h1><pre class="source lang-java linenums">package com.dbtraining.reconx.service;
+
+import com.dbtraining.reconx.dto.TradeRequest;
+import com.dbtraining.reconx.exception.DuplicateTradeRefException;
+import com.dbtraining.reconx.exception.TradeNotFoundException;
+import com.dbtraining.reconx.kafka.TradeEventProducer;
+import com.dbtraining.reconx.observability.TradeMetrics;
+import com.dbtraining.reconx.repository.CounterpartyRepository;
+import com.dbtraining.reconx.repository.InstrumentRepository;
+import com.dbtraining.reconx.repository.TradeRepository;
+import com.dbtraining.reconx.repository.TradeSpecifications;
+import com.dbtraining.reconx.repository.entity.Counterparty;
+import com.dbtraining.reconx.repository.entity.Instrument;
+import com.dbtraining.reconx.repository.entity.Trade;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.jpa.domain.Specification;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
+import java.time.LocalDate;
+
+@Service
+public class TradeService {
+
+    private final TradeRepository tradeRepository;
+    private final InstrumentRepository instrumentRepository;
+    private final CounterpartyRepository counterpartyRepository;
+    private final TradeEventProducer events;
+    private final TradeMetrics metrics;
+
+    public TradeService(
+            TradeRepository tradeRepository,
+            CounterpartyRepository cpRepo,
+            InstrumentRepository instrumentRepository,
+            TradeEventProducer events,
+<span class="nc" id="L37">            TradeMetrics metrics) {</span>
+
+<span class="nc" id="L39">        this.tradeRepository = tradeRepository;</span>
+<span class="nc" id="L40">        this.instrumentRepository = instrumentRepository;</span>
+<span class="nc" id="L41">        this.counterpartyRepository = cpRepo;</span>
+<span class="nc" id="L42">        this.events = events;</span>
+<span class="nc" id="L43">        this.metrics = metrics;</span>
+<span class="nc" id="L44">    }</span>
+
+
+    @Transactional
+    public Trade create(TradeRequest req, String actor) {
+
+<span class="nc bnc" id="L50" title="All 2 branches missed.">        if (tradeRepository.findByTradeRef(req.tradeRef()).isPresent()) {</span>
+<span class="nc" id="L51">            throw new DuplicateTradeRefException(req.tradeRef());</span>
+        }
+
+<span class="nc" id="L54">        Instrument instrument = instrumentRepository.findById(req.instrumentId())</span>
+<span class="nc" id="L55">                .orElseThrow(() -&gt; new TradeNotFoundException(</span>
+<span class="nc" id="L56">                        &quot;Instrument id: &quot; + req.instrumentId()));</span>
+
+<span class="nc" id="L58">        Counterparty counterparty = counterpartyRepository.findById(req.counterpartyId())</span>
+<span class="nc" id="L59">                .orElseThrow(() -&gt; new TradeNotFoundException(</span>
+<span class="nc" id="L60">                        &quot;Counterparty id: &quot; + req.counterpartyId()));</span>
+
+<span class="nc" id="L62">        Trade trade = new Trade();</span>
+
+<span class="nc" id="L64">        trade.setTradeRef(req.tradeRef());</span>
+<span class="nc" id="L65">        trade.setInstrument(instrument);</span>
+<span class="nc" id="L66">        trade.setCounterparty(counterparty);</span>
+<span class="nc" id="L67">        trade.setAssetClass(req.assetClass());</span>
+<span class="nc" id="L68">        trade.setSide(req.side());</span>
+<span class="nc" id="L69">        trade.setQuantity(req.quantity());</span>
+<span class="nc" id="L70">        trade.setPrice(req.price());</span>
+<span class="nc" id="L71">        trade.setTradeDate(req.tradeDate());</span>
+<span class="nc" id="L72">        trade.setStatus(&quot;PENDING&quot;);</span>
+
+<span class="nc" id="L74">        Trade saved = tradeRepository.save(trade);</span>
+
+<span class="nc" id="L76">        metrics.incrementTradeCreated();</span>
+<span class="nc" id="L77">        metrics.recordTradeValue(</span>
+<span class="nc" id="L78">                saved.getQuantity().multiply(saved.getPrice()).doubleValue()</span>
+        );
+
+<span class="nc" id="L81">        return saved;</span>
+    }
+
+
+    @Transactional
+    public Trade update(Long id, TradeRequest req, String actor) {
+
+<span class="nc" id="L88">        Trade trade = tradeRepository.findById(id)</span>
+<span class="nc" id="L89">                .orElseThrow(() -&gt; new TradeNotFoundException(</span>
+                        &quot;Trade id: &quot; + id));
+
+<span class="nc" id="L92">        trade.setTradeRef(req.tradeRef());</span>
+<span class="nc" id="L93">        trade.setQuantity(req.quantity());</span>
+<span class="nc" id="L94">        trade.setPrice(req.price());</span>
+<span class="nc" id="L95">        trade.setTradeDate(req.tradeDate());</span>
+<span class="nc" id="L96">        trade.setSide(req.side());</span>
+<span class="nc" id="L97">        trade.setAssetClass(req.assetClass());</span>
+
+<span class="nc" id="L99">        trade.setCounterparty(</span>
+<span class="nc" id="L100">                counterpartyRepository.findById(req.counterpartyId())</span>
+<span class="nc" id="L101">                        .orElseThrow(() -&gt; new TradeNotFoundException(</span>
+<span class="nc" id="L102">                                &quot;Counterparty id: &quot; + req.counterpartyId()))</span>
+        );
+
+<span class="nc" id="L105">        trade.setInstrument(</span>
+<span class="nc" id="L106">                instrumentRepository.findById(req.instrumentId())</span>
+<span class="nc" id="L107">                        .orElseThrow(() -&gt; new TradeNotFoundException(</span>
+<span class="nc" id="L108">                                &quot;Instrument id: &quot; + req.instrumentId()))</span>
+        );
+
+<span class="nc" id="L111">        return tradeRepository.save(trade);</span>
+    }
+
+
+    @Transactional
+    public Trade updateStatus(Long id, String status, String actor) {
+
+<span class="nc" id="L118">        Trade trade = tradeRepository.findById(id)</span>
+<span class="nc" id="L119">                .orElseThrow(() -&gt; new TradeNotFoundException(</span>
+                        &quot;Trade id: &quot; + id));
+
+<span class="nc" id="L122">        trade.setStatus(status);</span>
+<span class="nc" id="L123">                Trade saved = tradeRepository.save(trade);</span>
+                // initialize lazily-loaded associations before returning (avoid LazyInitializationException in mappers)
+<span class="nc bnc" id="L125" title="All 2 branches missed.">                if (saved.getInstrument() != null) {</span>
+<span class="nc" id="L126">                        saved.getInstrument().getSymbol();</span>
+                }
+<span class="nc bnc" id="L128" title="All 2 branches missed.">                if (saved.getCounterparty() != null) {</span>
+<span class="nc" id="L129">                        saved.getCounterparty().getName();</span>
+                }
+<span class="nc" id="L131">                return saved;</span>
+    }
+
+
+    @Transactional
+    public void softDelete(Long id, String actor) {
+
+<span class="nc" id="L138">        Trade trade = tradeRepository.findById(id)</span>
+<span class="nc" id="L139">                .orElseThrow(() -&gt; new TradeNotFoundException(</span>
+                        &quot;Trade id: &quot; + id));
+
+<span class="nc" id="L142">        trade.softDelete();</span>
+
+<span class="nc" id="L144">        tradeRepository.save(trade);</span>
+<span class="nc" id="L145">    }</span>
+
+
+    @Transactional(readOnly = true)
+    public Page&lt;Trade&gt; list(
+            LocalDate from,
+            LocalDate to,
+            String status,
+            Long counterpartyId,
+            Pageable pageable) {
+
+<span class="nc" id="L156">        Specification&lt;Trade&gt; spec = Specification.where(null);</span>
+
+<span class="nc bnc" id="L158" title="All 4 branches missed.">        if (from != null &amp;&amp; to != null) {</span>
+<span class="nc" id="L159">            spec = spec.and(</span>
+<span class="nc" id="L160">                    TradeSpecifications.tradeDateBetween(from, to)</span>
+            );
+        }
+
+<span class="nc bnc" id="L164" title="All 2 branches missed.">        if (status != null) {</span>
+<span class="nc" id="L165">            spec = spec.and(</span>
+<span class="nc" id="L166">                    TradeSpecifications.hasStatus(status)</span>
+            );
+        }
+
+<span class="nc bnc" id="L170" title="All 2 branches missed.">        if (counterpartyId != null) {</span>
+<span class="nc" id="L171">            spec = spec.and(</span>
+<span class="nc" id="L172">                    TradeSpecifications.hasCounterparty(counterpartyId)</span>
+            );
+        }
+
+<span class="nc" id="L176">                Page&lt;Trade&gt; page = tradeRepository.findAll(spec, pageable);</span>
+                // initialize lazy associations while still in transaction to avoid LazyInitializationException
+<span class="nc" id="L178">                page.getContent().forEach(t -&gt; {</span>
+<span class="nc bnc" id="L179" title="All 2 branches missed.">                        if (t.getInstrument() != null) t.getInstrument().getSymbol();</span>
+<span class="nc bnc" id="L180" title="All 2 branches missed.">                        if (t.getCounterparty() != null) t.getCounterparty().getName();</span>
+<span class="nc" id="L181">                });</span>
+<span class="nc" id="L182">                return page;</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.12.202403310830</span></div></body></html>
