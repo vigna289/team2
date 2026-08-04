@@ -1,0 +1,51 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>KafkaTopicsConfig.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">reconx</a> &gt; <a href="index.source.html" class="el_package">com.dbtraining.reconx.kafka</a> &gt; <span class="el_source">KafkaTopicsConfig.java</span></div><h1>KafkaTopicsConfig.java</h1><pre class="source lang-java linenums">package com.dbtraining.reconx.kafka;
+
+import org.apache.kafka.clients.admin.NewTopic;
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
+import org.springframework.context.annotation.Profile;
+import org.springframework.kafka.config.TopicBuilder;
+
+/**
+ * ============================================================================
+ * TICKET-ADV128 — Declare Kafka topics on app start (3 main topics + DLQ)
+ * TICKET-ADV134 — DLQ topic must be pre-declared for DeadLetterPublishingRecoverer
+ *
+ * WHAT:    Creates 4 topics if they don't already exist (trade-events,
+ *          recon-results, system-alerts, trade-events-dlq).
+ * HOW:     NewTopic @Bean instances are picked up by KafkaAdmin which
+ *          creates them at application startup.
+ * WHY:     Auto-create in code keeps `docker compose up` -&gt; &quot;ready&quot; in one
+ *          step. No manual `kafka-topics --create` ceremony.
+ * OBSERVE: Kafdrop (http://localhost:9000) lists all 4 topics after startup.
+ *
+ * HINT: Class is @Profile(&quot;!dev &amp; !test&quot;) so it only runs in real
+ *       environments — in dev / test the embedded Kafka or compose stack
+ *       is expected to have the topics already.
+ * ============================================================================
+ */
+@Configuration
+@Profile(&quot;!dev &amp; !test&quot;)
+<span class="nc" id="L29">public class KafkaTopicsConfig {</span>
+
+    @Bean
+    public NewTopic tradeEvents() {
+<span class="nc" id="L33">        return TopicBuilder.name(&quot;trade-events&quot;).partitions(3).replicas(1).build();</span>
+    }
+
+    @Bean
+    public NewTopic reconResults() {
+<span class="nc" id="L38">        return TopicBuilder.name(&quot;recon-results&quot;).partitions(2).replicas(1).build();</span>
+    }
+
+    @Bean
+    public NewTopic systemAlerts() {
+<span class="nc" id="L43">        return TopicBuilder.name(&quot;system-alerts&quot;).partitions(1).replicas(1).build();</span>
+    }
+
+    @Bean
+    public NewTopic tradeEventsDlq() {
+<span class="nc" id="L48">        return TopicBuilder.name(&quot;trade-events-dlq&quot;).partitions(3).replicas(1).build();</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.12.202403310830</span></div></body></html>

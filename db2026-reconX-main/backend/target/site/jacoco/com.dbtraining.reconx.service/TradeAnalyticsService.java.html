@@ -1,0 +1,173 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>TradeAnalyticsService.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">reconx</a> &gt; <a href="index.source.html" class="el_package">com.dbtraining.reconx.service</a> &gt; <span class="el_source">TradeAnalyticsService.java</span></div><h1>TradeAnalyticsService.java</h1><pre class="source lang-java linenums">package com.dbtraining.reconx.service;
+
+import com.dbtraining.reconx.model.BondTrade;
+import com.dbtraining.reconx.model.DerivativeTrade;
+import com.dbtraining.reconx.model.EquityTrade;
+import com.dbtraining.reconx.model.FXTrade;
+import com.dbtraining.reconx.model.Side;
+import com.dbtraining.reconx.model.TradeType;
+import org.springframework.stereotype.Service;
+
+import java.math.BigDecimal;
+import java.math.RoundingMode;
+import java.util.Collections;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import java.util.function.BiConsumer;
+import java.util.function.BinaryOperator;
+import java.util.function.Function;
+import java.util.function.Supplier;
+import java.util.stream.Collector;
+import java.util.stream.Collectors;
+
+/**
+ * TICKET-ADV034 / ADV035 / ADV036 — Trade analytics implementations.
+ *
+ * ADV035: VwapCollector is implemented here as a custom Collector that
+ * accumulates (sumPriceQty, sumQty) and finishes to sumPriceQty / sumQty.
+ * Combiner returns a fresh accumulator (parallel-safety).
+ */
+@Service
+<span class="fc" id="L32">public class TradeAnalyticsService {</span>
+
+    /** TICKET-ADV034 — count + sum of notional per counterparty. */
+    public Map&lt;Long, NotionalSummary&gt; notionalByCounterparty(List&lt;? extends TradeType&gt; trades) {
+<span class="pc bpc" id="L36" title="2 of 4 branches missed.">        if (trades == null || trades.isEmpty()) {</span>
+<span class="nc" id="L37">            return Map.of();</span>
+        }
+
+<span class="fc" id="L40">        return trades.stream()</span>
+<span class="fc" id="L41">                .collect(Collectors.groupingBy(</span>
+                        this::counterpartyIdOf,
+<span class="fc" id="L43">                        Collectors.collectingAndThen(</span>
+<span class="fc" id="L44">                                Collectors.toList(),</span>
+<span class="fc" id="L45">                                list -&gt; new NotionalSummary(</span>
+<span class="fc" id="L46">                                        list.size(),</span>
+<span class="fc" id="L47">                                        list.stream()</span>
+<span class="fc" id="L48">                                                .map(t -&gt; t.notional().amount())</span>
+<span class="fc" id="L49">                                                .reduce(BigDecimal.ZERO, BigDecimal::add)</span>
+                                )
+                        )
+                ));
+    }
+
+    /**
+     * TICKET-ADV035 — VWAP = SUM(price * qty) / SUM(qty). Equity-only.
+     *
+     * Uses a custom Collector (VwapCollector) to compute VWAP in a
+     * parallel-safe way and return BigDecimal scaled to 4 decimal places
+     * with RoundingMode.HALF_UP. Empty input -&gt; BigDecimal.ZERO.
+     */
+    public Map&lt;String, BigDecimal&gt; vwapByInstrument(List&lt;EquityTrade&gt; equityTrades) {
+<span class="nc bnc" id="L63" title="All 4 branches missed.">        if (equityTrades == null || equityTrades.isEmpty()) {</span>
+<span class="nc" id="L64">            return Map.of();</span>
+        }
+
+<span class="nc" id="L67">        return equityTrades.stream()</span>
+<span class="nc" id="L68">                .collect(Collectors.groupingBy(</span>
+                        EquityTrade::instrumentSymbol,
+                        new VwapCollector()
+                ));
+    }
+
+    /** TICKET-ADV036 — P&amp;L per instrument symbol (sign by Side). */
+    public Map&lt;String, BigDecimal&gt; pnlByInstrument(List&lt;EquityTrade&gt; equityTrades) {
+<span class="pc bpc" id="L76" title="2 of 4 branches missed.">        if (equityTrades == null || equityTrades.isEmpty()) {</span>
+<span class="nc" id="L77">            return Map.of();</span>
+        }
+
+<span class="fc" id="L80">        return equityTrades.stream()</span>
+<span class="fc" id="L81">                .collect(Collectors.groupingBy(</span>
+                        EquityTrade::instrumentSymbol,
+<span class="fc" id="L83">                        Collectors.mapping(</span>
+                                this::pnl,
+<span class="fc" id="L85">                                Collectors.reducing(BigDecimal.ZERO, BigDecimal::add)</span>
+                        )
+                ));
+    }
+
+    private BigDecimal pnl(EquityTrade t) {
+<span class="fc" id="L91">        BigDecimal abs = t.price().multiply(t.quantity());</span>
+<span class="fc bfc" id="L92" title="All 2 branches covered.">        return t.side() == Side.SELL ? abs : abs.negate();</span>
+    }
+
+    private long counterpartyIdOf(TradeType t) {
+<span class="pc bpc" id="L96" title="3 of 4 branches missed.">        return switch (t) {</span>
+<span class="fc" id="L97">            case EquityTrade e -&gt; e.counterpartyId();</span>
+<span class="nc" id="L98">            case FXTrade f -&gt; f.counterpartyId();</span>
+<span class="nc" id="L99">            case BondTrade b -&gt; b.counterpartyId();</span>
+<span class="nc" id="L100">            case DerivativeTrade d -&gt; d.counterpartyId();</span>
+        };
+    }
+
+<span class="fc" id="L104">    public record NotionalSummary(long count, BigDecimal total) {}</span>
+
+    /**
+     * Custom Collector implementation that computes VWAP for a stream of EquityTrade.
+     * Accumulator holds sumPriceQty and sumQty. Combiner returns a fresh accumulator
+     * combining both inputs' sums (important for parallel safety).
+     *
+     * Produces BigDecimal scaled to 4 decimal places, HALF_UP.
+     * Empty accumulator -&gt; BigDecimal.ZERO.
+     */
+    private static final class VwapCollector implements Collector&lt;EquityTrade, VwapCollector.Acc, BigDecimal&gt; {
+
+        static final int SCALE = 4;
+<span class="nc" id="L117">        static final RoundingMode ROUNDING = RoundingMode.HALF_UP;</span>
+
+        static final class Acc {
+            BigDecimal sumPriceQty;
+            BigDecimal sumQty;
+
+<span class="nc" id="L123">            Acc() {</span>
+<span class="nc" id="L124">                this.sumPriceQty = BigDecimal.ZERO;</span>
+<span class="nc" id="L125">                this.sumQty = BigDecimal.ZERO;</span>
+<span class="nc" id="L126">            }</span>
+
+<span class="nc" id="L128">            Acc(BigDecimal sumPriceQty, BigDecimal sumQty) {</span>
+<span class="nc" id="L129">                this.sumPriceQty = sumPriceQty;</span>
+<span class="nc" id="L130">                this.sumQty = sumQty;</span>
+<span class="nc" id="L131">            }</span>
+        }
+
+        @Override
+        public Supplier&lt;Acc&gt; supplier() {
+<span class="nc" id="L136">            return Acc::new;</span>
+        }
+
+        @Override
+        public BiConsumer&lt;Acc, EquityTrade&gt; accumulator() {
+<span class="nc" id="L141">            return (acc, t) -&gt; {</span>
+<span class="nc" id="L142">                BigDecimal priceQty = t.price().multiply(t.quantity());</span>
+<span class="nc" id="L143">                acc.sumPriceQty = acc.sumPriceQty.add(priceQty);</span>
+<span class="nc" id="L144">                acc.sumQty = acc.sumQty.add(t.quantity());</span>
+<span class="nc" id="L145">            };</span>
+        }
+
+        @Override
+        public BinaryOperator&lt;Acc&gt; combiner() {
+            // Return a fresh accumulator for parallel safety.
+<span class="nc" id="L151">            return (a, b) -&gt; new Acc(</span>
+<span class="nc" id="L152">                    a.sumPriceQty.add(b.sumPriceQty),</span>
+<span class="nc" id="L153">                    a.sumQty.add(b.sumQty)</span>
+            );
+        }
+
+        @Override
+        public Function&lt;Acc, BigDecimal&gt; finisher() {
+<span class="nc" id="L159">            return acc -&gt; {</span>
+<span class="nc bnc" id="L160" title="All 2 branches missed.">                if (acc.sumQty.compareTo(BigDecimal.ZERO) == 0) {</span>
+<span class="nc" id="L161">                    return BigDecimal.ZERO;</span>
+                }
+<span class="nc" id="L163">                return acc.sumPriceQty.divide(acc.sumQty, SCALE, ROUNDING);</span>
+            };
+        }
+
+        @Override
+        public Set&lt;Characteristics&gt; characteristics() {
+<span class="nc" id="L169">            return Collections.singleton(Characteristics.UNORDERED);</span>
+        }
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.12.202403310830</span></div></body></html>
