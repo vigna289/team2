@@ -83,7 +83,10 @@ deliverable.
 | `system-alerts` | Operational alerts |
 | DLQ (per topic) | Dead-letter queue for failed consumption |
 
+## Load test results
 
+_Pending ADV158 — k6 summary (200 VUs, p95 latency, throughput, error rate)
+goes here._
 
 ## CI/CD pipeline
 
